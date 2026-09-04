@@ -29,6 +29,8 @@ for (const path of [
   "templates/process/atlas.json",
   "src/index.d.ts",
   "schema.json",
+  "skills/ketatlas/SKILL.md",
+  "docs/agent-mockups.md",
 ])
   assert(files.has(path), `Missing packed file: ${path}`);
 for (const path of files)

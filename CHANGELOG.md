@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Portable KetAtlas agent skill and a product-brief workflow for generating compatible interactive HTML mockups.
 - Automatically publish verified stable version increases from `develop`, with duplicate-release protection and npm provenance.
 
 ## 0.1.0 — 2026-09-04

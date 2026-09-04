@@ -47,6 +47,18 @@ npx --yes --package ~/dev/ketatlas ketatlas scaffold my-atlas
 
 Replace `~/dev/ketatlas` with your checkout path. Stable version increases merged into `develop` are automatically published after CI verifies the package. See [Releasing](docs/releasing.md) for setup and release steps.
 
+## Create mockups with an agent
+
+Install the KetAtlas skill in your product project:
+
+```sh
+npx skills add ketvietlab/ketatlas --skill ketatlas
+```
+
+Ask your agent to use the skill with a product brief: requested flows, target platforms, design references, and output directory. The agent creates actual HTML screens, a version 1 `atlas.json`, and run instructions, then audits the result.
+
+See [Agent mockups](docs/agent-mockups.md) for installation options, a ready-to-use request, and a reusable brief template. Agents without skill support can read the [single skill file](skills/ketatlas/SKILL.md) directly.
+
 ## One file describes the journey
 
 ```json

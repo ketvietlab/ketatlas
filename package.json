@@ -33,6 +33,7 @@
     "LICENSE",
     "NOTICE.md",
     "templates",
+    "skills",
     "docs",
     "CHANGELOG.md"
   ],
@@ -42,8 +43,8 @@
     "test": "node --test tests/*.test.js",
     "test:e2e": "node tests/browser.mjs",
     "check": "npm run validate && npm test && npm run test:e2e",
-    "format": "prettier --write src styles/ketatlas.css bin scripts docs examples starter templates tests '*.md' '*.json' .github/workflows",
-    "format:check": "prettier --check src styles/ketatlas.css bin scripts docs examples starter templates tests '*.md' '*.json' .github/workflows",
+    "format": "prettier --write src styles/ketatlas.css bin scripts docs examples starter templates skills tests '*.md' '*.json' .github/workflows",
+    "format:check": "prettier --check src styles/ketatlas.css bin scripts docs examples starter templates skills tests '*.md' '*.json' .github/workflows",
     "prepare:assets": "node scripts/prepare-assets.mjs",
     "prepack": "node scripts/verify-assets.mjs",
     "prepare:templates": "node scripts/schema.mjs && node scripts/prepare-templates.mjs",
