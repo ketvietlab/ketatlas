@@ -1,0 +1,56 @@
+{
+  "source": "@ketvietlab/design-system",
+  "repository": "https://github.com/ketvietlab/ketjs",
+  "revision": "fab9de5d5814e96f2e04ced806b6bef487cf9662",
+  "transform": "Flatten imports. Adapt :root to :host in the Shadow DOM bundle. Preserve all token values.",
+  "fontSource": "@fontsource-variable/inter@5.3.0",
+  "iconSource": "lucide-static@1.40.0",
+  "sources": [
+    {
+      "path": "packages/design-system/src/styles.css",
+      "sha256": "d93ffcad19de960a8652067b6be872bcbc963fba5e605770cb35d9577c48d803"
+    },
+    {
+      "path": "packages/design-system/src/foundations/tokens.css",
+      "sha256": "b940bdde82f0df2e54aec6c168915561281531aa903dfdf55d7585112921055e"
+    },
+    {
+      "path": "packages/design-system/src/foundations/reset.css",
+      "sha256": "bf993c7526bdb7654bbf25f661eac65c579ac11a17bd189bc4e07e9ff8ba9349"
+    },
+    {
+      "path": "packages/design-system/src/primitives/primitives.css",
+      "sha256": "1a102a816369f10fd126ea03fbbb1172c9923afc4af89951d32ba9403a1698db"
+    },
+    {
+      "path": "packages/design-system/src/primitives/navigation.css",
+      "sha256": "1375592dced6468752607ec513d0f85df5fdacc69f681bf4f01677bddd2167c7"
+    },
+    {
+      "path": "packages/design-system/src/primitives/progress.css",
+      "sha256": "3b8436da7884d30a180588a474e77dfd8237f2346e2fad7718d1e5295b8cc8dc"
+    },
+    {
+      "path": "packages/design-system/src/layouts/layouts.css",
+      "sha256": "905db294d479c9db83059cb43f1ee7ea79573c04824fde378e923610052399f2"
+    },
+    {
+      "path": "packages/design-system/src/layouts/shell.css",
+      "sha256": "4dc89488b74022e999c9a1591650ef37826640302c8929074170c0eeddb318ec"
+    },
+    {
+      "path": "packages/design-system/src/patterns/patterns.css",
+      "sha256": "7444dcc6336ab8bb60ca2ca6809d0fd919f09108db36020c5f3500d752e29f57"
+    }
+  ],
+  "outputs": {
+    "styles/design-system.css": "ecc93e327cf006190bef28485d15aedf2f84087c80f5eb6e3594be00ac253a5c",
+    "styles/design-system.document.css": "d095a063da527933a96dd415ebf960b4e5f9e882ad5b806493aac9141490840e",
+    "src/icons.js": "44791ce0a1400d0bd6f628816935372ab02ace3e981b099ed1c157f6f13422bb",
+    "assets/KETJS-LICENSE": "21a04c5b7aa12b45dfefe506cae70ffb2f22961e3bd89d9edcbcaad57e86956c",
+    "assets/INTER-LICENSE": "3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345",
+    "assets/LUCIDE-LICENSE": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+    "assets/inter-latin-wght-normal.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+    "assets/inter-vietnamese-wght-normal.woff2": "5c66f9e07e90c6d4ac4922cc68d60de26c17b1858e677fb5e603fce3952b3ff2"
+  }
+}

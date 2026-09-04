@@ -1,0 +1,6 @@
+assets/
+styles/design-system.css
+node_modules/
+artifacts/
+styles/design-system.document.css
+templates/*/styles/design-system.css

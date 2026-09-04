@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KetAtlas — workflow playground</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      #atlas {
+        height: 100dvh;
+      }
+      #error {
+        font: 16px system-ui;
+        white-space: pre-wrap;
+        padding: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="atlas"></main>
+    <pre id="error" hidden></pre>
+    <script type="module">
+      import { loadAtlas } from "../src/index.js";
+      try {
+        window.atlas = await loadAtlas(document.querySelector("#atlas"), "./atlas.json", {
+          syncUrl: true,
+        });
+      } catch (error) {
+        document.querySelector("#error").hidden = false;
+        document.querySelector("#error").textContent = error.message;
+      }
+    </script>
+  </body>
+</html>

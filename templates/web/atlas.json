@@ -1,0 +1,77 @@
+{
+  "$schema": "./ketatlas.schema.json",
+  "version": 1,
+  "title": "Purchase approval",
+  "screens": [
+    {
+      "id": "request-list",
+      "title": "Purchase requests",
+      "url": "./screens/portal.html?screen=list",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "badge": "Web"
+    },
+    {
+      "id": "request-review",
+      "title": "Review purchase request",
+      "url": "./screens/portal.html?screen=review",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "badge": "Web"
+    },
+    {
+      "id": "approved",
+      "title": "Approval recorded",
+      "url": "./screens/portal.html?screen=approved",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "badge": "Web"
+    }
+  ],
+  "flows": [
+    {
+      "id": "purchase",
+      "title": "Review a purchase request",
+      "group": "Web portal",
+      "description": "Open a pending request, review its items, and approve it. Web screens retain their 1280 × 800 layout.",
+      "nodes": [
+        {
+          "id": "inbox",
+          "screen": "request-list"
+        },
+        {
+          "id": "review",
+          "screen": "request-review"
+        },
+        {
+          "id": "approved",
+          "screen": "approved"
+        }
+      ],
+      "edges": [
+        {
+          "from": "inbox",
+          "to": "review",
+          "label": "Open request"
+        },
+        {
+          "from": "review",
+          "to": "approved",
+          "label": "Approve request"
+        },
+        {
+          "from": "review",
+          "to": "inbox",
+          "label": "Return to inbox",
+          "kind": "recovery"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Northstar mobile</title>
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body data-kv-design-system>
+    <div class="status"><strong>9:41</strong><span>◔ ▰</span></div>
+    <header class="mobile-header">
+      <span class="wordmark">northstar</span><small>Workspace</small>
+    </header>
+    <main class="mobile-body" id="content"></main>
+    <footer class="mobile-footer">
+      <button id="continue" data-ui="action" data-variant="primary"></button>
+    </footer>
+    <script>
+      const screen = new URLSearchParams(location.search).get("screen") || "sign-in";
+      const content = document.getElementById("content"),
+        button = document.getElementById("continue");
+      const go = (id) => (location.href = "?screen=" + id);
+      if (screen === "sign-in") {
+        content.innerHTML =
+          '<div class="logo">n</div><h1>Good work<br>starts here.</h1><p>Sign in to your team’s workspace and pick up where you left off.</p><label for="email">Work email</label><input id="email" type="email" value="alex@example.test" autocomplete="off"><p style="margin-top:20px;font-size:12px">We’ll send you a one-time verification code.</p>';
+        button.textContent = "Continue with email";
+        button.onclick = () => {
+          const email = document.getElementById("email");
+          if (email.reportValidity() && email.value) go("verify");
+          else email.focus();
+        };
+      } else if (screen === "verify" || screen === "expired") {
+        content.innerHTML =
+          '<div class="eyebrow">One more step</div><h1>Check your<br>inbox.</h1><p>Enter the six-digit code sent to<br><strong>alex@example.test</strong></p><label for="code">Verification code</label><input id="code" inputmode="numeric" value="248 916" autocomplete="off">' +
+          (screen === "expired"
+            ? '<div class="alert">This code has expired. Request a new one to continue.</div>'
+            : '<p style="margin-top:24px;font-size:12px">Your code is valid for 10 minutes.</p>');
+        button.textContent = screen === "expired" ? "Send a new code" : "Verify and continue";
+        button.onclick = () => go(screen === "expired" ? "verify" : "home");
+      } else {
+        content.innerHTML =
+          '<div class="eyebrow">Monday, September 7</div><h1>Morning, Alex.</h1><p>Here’s what needs your attention today.</p><div class="stat"><small>Tasks ready for you</small><strong>08</strong><p>3 due today · 5 upcoming</p></div><div class="row-card"><div><strong>Review purchase request</strong><small>Operations · Due today</small></div><span>→</span></div><div class="row-card"><div><strong>Confirm tomorrow’s delivery</strong><small>Logistics · Due today</small></div><span>→</span></div>';
+        button.textContent = "Back to welcome";
+        button.onclick = () => go("sign-in");
+      }
+    </script>
+  </body>
+</html>

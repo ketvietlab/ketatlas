@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Northstar purchasing</title>
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body data-kv-design-system>
+    <div class="portal">
+      <aside>
+        <div class="wordmark">northstar</div>
+        <nav>
+          <span>Overview</span><span class="active">Purchasing</span><span>Inventory</span
+          ><span>Suppliers</span><span>Reports</span>
+        </nav>
+      </aside>
+      <main>
+        <header><small>Operations / Purchasing</small><span>Alex Morgan · AM</span></header>
+        <div id="content"></div>
+      </main>
+    </div>
+    <script>
+      const screen = new URLSearchParams(location.search).get("screen") || "list";
+      const content = document.getElementById("content");
+      const go = (id) => (location.href = "?screen=" + id);
+      if (screen === "list")
+        content.innerHTML =
+          '<div class="content-header"><div><div class="eyebrow">Your approval queue</div><h1>Purchase requests</h1><p>Review requests before they reach your suppliers.</p></div><span class="pill">3 waiting for review</span></div><div class="panel"><table><thead><tr><th>Request</th><th>Requested by</th><th>Supplier</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody><tr><td><strong>PR-1042</strong><br><small>Office equipment</small></td><td>Jamie Chen</td><td>Paper & Co.</td><td>$1,240.00</td><td><span class="pill">Pending</span></td><td><button data-ui="action" data-variant="secondary" id="open">Review</button></td></tr><tr><td>PR-1041<br><small>Packaging supplies</small></td><td>Robin Lee</td><td>Packworks</td><td>$860.00</td><td><span class="pill">Pending</span></td><td></td></tr><tr><td>PR-1040<br><small>Warehouse shelving</small></td><td>Sam Taylor</td><td>Storage Lab</td><td>$2,180.00</td><td><span class="pill">Pending</span></td><td></td></tr></tbody></table></div>';
+      else if (screen === "review")
+        content.innerHTML =
+          '<div class="content-header"><div><div class="eyebrow">PR-1042</div><h1>Office equipment</h1><p>Requested by Jamie Chen · September 7, 2026</p></div><span class="pill">Pending review</span></div><div class="panel"><div class="summary"><div><small>Supplier</small><strong>Paper & Co.</strong></div><div><small>Delivery location</small><strong>Northstar · Main office</strong></div></div><table><thead><tr><th>Item</th><th>Quantity</th><th>Unit price</th><th>Amount</th></tr></thead><tbody><tr><td>Ergonomic desk chair</td><td>4</td><td>$260.00</td><td>$1,040.00</td></tr><tr><td>Adjustable monitor stand</td><td>4</td><td>$50.00</td><td>$200.00</td></tr></tbody></table><div class="actions"><strong>Total · $1,240.00</strong></div></div><div class="actions"><button id="back" data-ui="action" data-variant="secondary">Back to requests</button><button id="approve" data-ui="action" data-variant="primary">Approve request</button></div>';
+      else
+        content.innerHTML =
+          '<div class="panel success-block"><div class="logo">✓</div><div class="eyebrow">Approval recorded</div><h1>Ready for purchasing.</h1><p>PR-1042 has been approved for $1,240.00.<br>The purchasing team can now issue the order.</p><div class="actions" style="justify-content:center"><button id="back" data-ui="action" data-variant="primary">Back to requests</button></div></div>';
+      document.getElementById("open")?.addEventListener("click", () => go("review"));
+      document.getElementById("back")?.addEventListener("click", () => go("list"));
+      document.getElementById("approve")?.addEventListener("click", () => go("approved"));
+    </script>
+  </body>
+</html>

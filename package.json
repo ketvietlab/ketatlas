@@ -1,0 +1,59 @@
+{
+  "name": "ketatlas",
+  "version": "0.1.0",
+  "description": "Interactive HTML maps for screens, workflows, and user journeys.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ketvietlab/ketatlas.git"
+  },
+  "homepage": "https://github.com/ketvietlab/ketatlas#readme",
+  "bugs": "https://github.com/ketvietlab/ketatlas/issues",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    },
+    "./schema.json": "./schema.json"
+  },
+  "bin": {
+    "ketatlas": "./bin/ketatlas.js"
+  },
+  "files": [
+    "src",
+    "styles",
+    "assets",
+    "bin",
+    "schema.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    "templates",
+    "docs",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "dev": "node bin/ketatlas.js serve examples/atlas.json --root . --port 4178",
+    "validate": "node bin/ketatlas.js audit examples/atlas.json --root . && node bin/ketatlas.js audit templates/basic/atlas.json && node bin/ketatlas.js audit templates/web/atlas.json && node bin/ketatlas.js audit templates/process/atlas.json",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/browser.mjs",
+    "check": "npm run validate && npm test && npm run test:e2e",
+    "format": "prettier --write src styles/ketatlas.css bin scripts docs examples starter templates tests '*.md' '*.json' .github/workflows",
+    "format:check": "prettier --check src styles/ketatlas.css bin scripts docs examples starter templates tests '*.md' '*.json' .github/workflows",
+    "prepare:assets": "node scripts/prepare-assets.mjs",
+    "prepack": "node scripts/verify-assets.mjs",
+    "prepare:templates": "node scripts/schema.mjs && node scripts/prepare-templates.mjs",
+    "test:package": "node tests/package.mjs"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "ajv": "8.18.0",
+    "lucide-static": "1.40.0",
+    "playwright": "1.62.1",
+    "prettier": "3.6.2"
+  }
+}

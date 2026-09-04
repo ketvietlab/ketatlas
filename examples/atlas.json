@@ -1,0 +1,151 @@
+{
+  "$schema": "../schema.json",
+  "version": 1,
+  "title": "Northstar workflows",
+  "description": "One atlas for a mobile app, a web portal, and an operations process.",
+  "viewport": { "width": 390, "height": 844 },
+  "screens": [
+    {
+      "id": "sign-in",
+      "title": "Welcome back",
+      "url": "./screens/mobile.html?screen=sign-in",
+      "badge": "Mobile"
+    },
+    {
+      "id": "verify",
+      "title": "Verify your email",
+      "url": "./screens/mobile.html?screen=verify",
+      "badge": "Mobile"
+    },
+    {
+      "id": "home",
+      "title": "Your workspace",
+      "url": "./screens/mobile.html?screen=home",
+      "badge": "Mobile"
+    },
+    {
+      "id": "request-list",
+      "title": "Purchase requests",
+      "url": "./screens/portal.html?screen=list",
+      "viewport": { "width": 1280, "height": 800 },
+      "badge": "Web"
+    },
+    {
+      "id": "request-review",
+      "title": "Review purchase request",
+      "url": "./screens/portal.html?screen=review",
+      "viewport": { "width": 1280, "height": 800 },
+      "badge": "Web"
+    },
+    {
+      "id": "approved",
+      "title": "Approval recorded",
+      "url": "./screens/portal.html?screen=approved",
+      "viewport": { "width": 1280, "height": 800 },
+      "badge": "Web"
+    }
+  ],
+  "flows": [
+    {
+      "id": "sign-in",
+      "title": "Sign in to your workspace",
+      "group": "Mobile app",
+      "description": "Start at welcome, verify your email, and reach your workspace. Follow the recovery branch if the code expires.",
+      "start": "welcome",
+      "ends": ["workspace"],
+      "nodes": [
+        { "id": "welcome", "screen": "sign-in", "column": 0 },
+        { "id": "verify", "screen": "verify", "column": 1 },
+        { "id": "workspace", "screen": "home", "column": 2 },
+        {
+          "id": "expired",
+          "screen": "verify",
+          "title": "Code expired",
+          "url": "./screens/mobile.html?screen=expired",
+          "column": 1,
+          "row": 1
+        }
+      ],
+      "edges": [
+        { "from": "welcome", "to": "verify", "label": "Continue with email" },
+        { "from": "verify", "to": "workspace", "label": "Code accepted" },
+        { "from": "verify", "to": "expired", "label": "Code expired", "kind": "conditional" },
+        { "from": "expired", "to": "verify", "label": "Send a new code", "kind": "recovery" }
+      ]
+    },
+    {
+      "id": "purchase",
+      "title": "Review a purchase request",
+      "group": "Web portal",
+      "description": "Open a pending request, review its items, and approve it. Web screens retain their 1280 × 800 layout.",
+      "nodes": [
+        { "id": "inbox", "screen": "request-list" },
+        { "id": "review", "screen": "request-review" },
+        { "id": "approved", "screen": "approved" }
+      ],
+      "edges": [
+        { "from": "inbox", "to": "review", "label": "Open request" },
+        { "from": "review", "to": "approved", "label": "Approve request" },
+        { "from": "review", "to": "inbox", "label": "Return to inbox", "kind": "recovery" }
+      ]
+    },
+    {
+      "id": "fulfilment",
+      "title": "From request to delivery",
+      "group": "Operations",
+      "description": "A process can be mapped without any screens. Connect people, decisions, and external handoffs with the same viewer.",
+      "start": "received",
+      "ends": ["delivered"],
+      "nodes": [
+        {
+          "id": "received",
+          "type": "note",
+          "title": "Request received",
+          "description": "Operations checks the delivery address and confirms the requested items.",
+          "column": 0
+        },
+        {
+          "id": "ready",
+          "type": "note",
+          "title": "Ready to ship",
+          "description": "The warehouse packs the order and records the parcel weight.",
+          "column": 1
+        },
+        {
+          "id": "carrier",
+          "type": "external",
+          "title": "Carrier handoff",
+          "description": "A delivery partner accepts the parcel. This step happens outside the product.",
+          "column": 2
+        },
+        {
+          "id": "delivered",
+          "type": "note",
+          "title": "Delivery confirmed",
+          "description": "The recipient confirms delivery. Operations closes the request.",
+          "column": 3
+        },
+        {
+          "id": "restock",
+          "type": "note",
+          "title": "Wait for replenishment",
+          "description": "Purchasing requests the missing stock and notifies operations when it arrives.",
+          "column": 1,
+          "row": 1
+        }
+      ],
+      "edges": [
+        { "from": "received", "to": "ready", "label": "Items available" },
+        { "from": "ready", "to": "carrier", "label": "Parcel collected" },
+        { "from": "carrier", "to": "delivered", "label": "Proof of delivery" },
+        {
+          "from": "received",
+          "to": "restock",
+          "label": "Stock unavailable",
+          "kind": "conditional"
+        },
+        { "from": "restock", "to": "ready", "label": "Stock received", "kind": "recovery" }
+      ]
+    }
+  ]
+}
