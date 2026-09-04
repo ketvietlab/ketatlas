@@ -135,4 +135,8 @@ npm run test:package
 
 Audit is static analysis. It does not execute product code or prove that native apps, external services, or embedded pages behave correctly. Arrows describe the authored workflow; the embedded HTML retains its own interactions.
 
-MIT · [Third-party notices](NOTICE.md).
+## License
+
+KetAtlas is a project of **KET VIET JSC, VN**, distributed under the [MIT License](LICENSE).
+
+Copyright (c) 2026 KET VIET JSC, VN. See [third-party notices](NOTICE.md) for bundled dependencies.

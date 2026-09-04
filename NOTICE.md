@@ -1,6 +1,6 @@
 # Third-party notices
 
-KetAtlas is maintained by KETVIET JSC under the MIT license.
+KetAtlas is maintained by KET VIET JSC, VN under the MIT license.
 
 - The viewer originated from KétSuite's HTML flow-map prototype, then was extracted into this independent package. No mobile app code or business data is bundled.
 - Default tokens and UI primitives: `@ketvietlab/design-system` from [KetJS](https://github.com/ketvietlab/ketjs), MIT. Exact source revision and file hashes are recorded in `assets/design-system.lock.json`. Generated output only adapts root selectors to a Shadow DOM host; token values are unchanged. See `assets/KETJS-LICENSE`.
