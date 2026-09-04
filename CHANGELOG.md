@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.1.0 — Initial scaffold
+## Unreleased
+
+- Automatically publish verified stable version increases from `develop`, with duplicate-release protection and npm provenance.
+
+## 0.1.0 — 2026-09-04
 
 - Standalone `ketatlas scaffold`, `serve <atlas.json>`, `audit`, and `validate` commands.
 - Basic, web and screenless process templates with a local configuration schema.
@@ -10,4 +14,4 @@
 - Canonical KetJS design system with pinned provenance and offline assets.
 - Static audits, CLI/server tests, browser evidence and packed-install verification.
 
-This entry describes the source version; it does not confirm publication to npm.
+Published to [npm](https://www.npmjs.com/package/ketatlas/v/0.1.0).

@@ -39,7 +39,7 @@ const npmArgs = ["exec", "--offline", "--yes", `--package=${archive}`, "--", "ke
 let child, browser;
 try {
   const run = (args) => execFileSync("npm", [...npmArgs, ...args], { cwd: temp, encoding: "utf8" });
-  assert.equal(run(["--version"]).trim(), "0.1.0");
+  assert.equal(run(["--version"]).trim(), info.version);
   run(["scaffold", project, "--template", "web"]);
   const report = JSON.parse(run(["audit", join(project, "atlas.json"), "--json", "--strict"]));
   assert(report.valid);

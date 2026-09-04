@@ -29,25 +29,7 @@ No wrapper HTML is needed. Edit `atlas.json` and the files under `screens/`, the
 
 ## Run through npx
 
-Run immediately from a local checkout, including before the first push or npm release:
-
-```sh
-npx --yes --package ~/dev/ketatlas ketatlas scaffold my-atlas
-npx --yes --package ~/dev/ketatlas ketatlas serve my-atlas/atlas.json
-npx --yes --package ~/dev/ketatlas ketatlas audit my-atlas/atlas.json --strict
-```
-
-Replace `~/dev/ketatlas` with your checkout path. This uses the local package, not an npm registry release.
-
-Once the source has been pushed to GitHub, run without cloning it yourself:
-
-```sh
-npx --yes --package=github:ketvietlab/ketatlas ketatlas scaffold my-atlas
-npx --yes --package=github:ketvietlab/ketatlas ketatlas serve my-atlas/atlas.json
-npx --yes --package=github:ketvietlab/ketatlas ketatlas audit my-atlas/atlas.json
-```
-
-After `ketatlas` has been published to npm, the short form is:
+[KetAtlas is available on npm](https://www.npmjs.com/package/ketatlas). Create and run a project without cloning this repository:
 
 ```sh
 npx ketatlas scaffold my-atlas --template web
@@ -55,7 +37,15 @@ npx ketatlas serve my-atlas/atlas.json
 npx ketatlas audit my-atlas/atlas.json --strict
 ```
 
-The repository does not imply an npm release. Package installation is tested from the actual `.tgz` archive; release instructions are in [Releasing](docs/releasing.md).
+Pin a version, such as `npx ketatlas@0.1.0`, for reproducible team workflows.
+
+To try changes from a local checkout before publishing:
+
+```sh
+npx --yes --package ~/dev/ketatlas ketatlas scaffold my-atlas
+```
+
+Replace `~/dev/ketatlas` with your checkout path. Stable version increases merged into `develop` are automatically published after CI verifies the package. See [Releasing](docs/releasing.md) for setup and release steps.
 
 ## One file describes the journey
 

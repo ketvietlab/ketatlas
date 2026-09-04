@@ -7,4 +7,4 @@
 - Test changed behavior with the relevant unit, CLI, or automated browser checks. Inspect browser screenshots in `artifacts/` for UI changes. Do not use manual browser control as test evidence.
 - Verify the packed installation when changing distribution, CLI commands, paths, templates, or runtime assets.
 - Keep example data synthetic. Do not fetch production services during tests or store credentials in the repository.
-- Publishing to npm is a separate maintainer action; do not imply a release exists just because the source version changed.
+- Publishing to npm is authorized by merging a stable version increase into `develop`. Preserve the CI verification and release checks; do not imply a release exists until npm confirms it.
