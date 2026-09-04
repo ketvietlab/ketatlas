@@ -29,7 +29,17 @@ No wrapper HTML is needed. Edit `atlas.json` and the files under `screens/`, the
 
 ## Run through npx
 
-Before the first npm release, run directly from this GitHub repository:
+Run immediately from a local checkout, including before the first push or npm release:
+
+```sh
+npx --yes --package ~/dev/ketatlas ketatlas scaffold my-atlas
+npx --yes --package ~/dev/ketatlas ketatlas serve my-atlas/atlas.json
+npx --yes --package ~/dev/ketatlas ketatlas audit my-atlas/atlas.json --strict
+```
+
+Replace `~/dev/ketatlas` with your checkout path. This uses the local package, not an npm registry release.
+
+Once the source has been pushed to GitHub, run without cloning it yourself:
 
 ```sh
 npx --yes --package=github:ketvietlab/ketatlas ketatlas scaffold my-atlas
