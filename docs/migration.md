@@ -30,6 +30,7 @@ Keep the existing screen IDs. Give repeated states unique node IDs, but reuse th
 3. Set the default viewport to 390 × 844. Keep DOC/TARGET source labels if useful to reviewers.
 4. Run `ketatlas audit atlas.json --root <project-root>` and resolve diagnostics.
 5. Run `ketatlas serve atlas.json --root <project-root>` and compare the existing 22 journeys, 108 screen IDs, and 162 edges against the exported graph.
-6. Re-run the project's browser interactions under the iframe sandbox. Only enable additional sandbox permissions for trusted HTML when its behavior requires them.
+6. Recheck product interactions with external browser tooling under the default iframe sandbox; use portable HTML rather than weakening the sandbox.
+7. Remove the old viewer tooling, package manifest, lockfile, and local build/test dependencies from the atlas folder. Keep screen HTML/CSS/JavaScript and its assets. Use global or version-pinned npx commands for serving and auditing. Record any earlier browser reports as historical evidence rather than requiring the old harness to run the map.
 
 KetAtlas UI is English. Vietnamese business labels inside the project's configuration and HTML can remain Vietnamese.

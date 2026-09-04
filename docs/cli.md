@@ -1,6 +1,8 @@
 # CLI reference
 
-Use `ketatlas` after installing the package, `node /path/to/ketatlas/bin/ketatlas.js` from a checkout, or the npx forms in the [README](../README.md).
+Install once with `npm install --global ketatlas@0.1.1`, or prefix commands with `npx --yes ketatlas@0.1.1`. No dependency installation is required in the consumer directory. `node /path/to/ketatlas/bin/ketatlas.js` is also available to framework maintainers.
+
+A consumer keeps only its JSON/schema, product HTML/CSS/JavaScript, assets, and documentation. The package manifest, lockfile, development scripts, and browser test dependencies belong to the tool. Normal `serve`, `validate`, and `audit` calls do not create files in the consumer; `audit --output` is an explicit exception.
 
 ## Scaffold
 

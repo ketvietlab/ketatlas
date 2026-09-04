@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 — 2026-09-04
+
+- Clarify the consumer contract: JSON, product screens, assets, and docs only; verify global and npx usage without project manifests or dependencies.
 
 - Portable KetAtlas agent skill and a product-brief workflow for generating compatible interactive HTML mockups.
 - Automatically publish verified stable version increases from `develop`, with duplicate-release protection and npm provenance.

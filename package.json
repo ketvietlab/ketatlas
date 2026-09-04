@@ -1,6 +1,6 @@
 {
   "name": "ketatlas",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Interactive HTML maps for screens, workflows, and user journeys.",
   "type": "module",
   "license": "MIT",

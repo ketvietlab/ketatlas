@@ -30,7 +30,7 @@ npx --yes ketatlas scaffold ./tasks/mockups --template basic
 
 Choose `basic` for mobile, `web` for desktop, or `process` for steps without UI. These are starting examples, not required product flows. Replace their sample content with the requested product.
 
-For an existing atlas, read and edit its JSON and screen files directly. Preserve useful IDs and URLs; scaffold refuses a nonempty directory and has no `--force` option. Use the project's pinned KetAtlas version when present; otherwise note the version returned by `npx ketatlas --version` for reproducibility.
+For an existing atlas, read and edit its JSON and screen files directly. Preserve useful IDs and URLs; scaffold refuses a nonempty directory and has no `--force` option. Pin the CLI version in the README commands (for example `npx --yes ketatlas@0.1.1 serve atlas.json`) or use a global installation. A consumer atlas does not need a local package installation.
 
 A self-contained project typically has:
 
@@ -43,7 +43,9 @@ tasks/mockups/
   README.md                Run commands, flow coverage, assumptions, verification
 ```
 
-Keep images and other assets inside the served directory when practical. Do not create a wrapper viewer or a custom canvas: `serve atlas.json` provides it.
+Keep product assets inside the served directory when practical. Deliver JSON/schema, screen HTML/CSS/JavaScript, assets, and documentation. Do not scaffold a `package.json`, lockfile, `node_modules`, asset build scripts, or a copied viewer/test harness in the atlas folder just to use KetAtlas. The installed CLI supplies scaffold, serve, validate, and audit. Browser verification can use the agent's external tooling. Preserve unrelated application tooling when extending an existing repository.
+
+Do not create a wrapper viewer or a custom canvas: `serve atlas.json` provides it.
 
 ## Model the journey
 

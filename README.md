@@ -12,46 +12,30 @@ See a mobile workflow map in action: explore connected screens and try the HTML 
 
 https://github.com/user-attachments/assets/13f24fc8-7b8e-4bda-9e02-364c120ee163
 
-## Start from this repository
+## Run without a project install
+
+[KetAtlas is available on npm](https://www.npmjs.com/package/ketatlas). Use Node.js 22+ and run it from any directory:
 
 ```sh
-git clone git@github.com:ketvietlab/ketatlas.git
-cd ketatlas
-npm ci
-npm run dev
+npx --yes ketatlas@0.1.1 scaffold my-atlas --template web
+npx --yes ketatlas@0.1.1 serve my-atlas/atlas.json
+npx --yes ketatlas@0.1.1 audit my-atlas/atlas.json --strict
 ```
 
-Open **http://127.0.0.1:4178**. The playground includes mobile sign-in, a desktop approval flow, and a fulfilment process.
-
-Create your own project:
+Or install the CLI once for your user account:
 
 ```sh
-node bin/ketatlas.js scaffold ../my-atlas
-node bin/ketatlas.js serve ../my-atlas/atlas.json
-node bin/ketatlas.js audit ../my-atlas/atlas.json --strict
+npm install --global ketatlas@0.1.1
+ketatlas scaffold my-atlas
+ketatlas serve my-atlas/atlas.json
+ketatlas audit my-atlas/atlas.json --strict
 ```
 
-No wrapper HTML is needed. Edit `atlas.json` and the files under `screens/`, then refresh the browser.
+The consumer folder contains `atlas.json`, its schema, product HTML/CSS/JavaScript, local assets, and documentation. It needs no `package.json`, lockfile, `node_modules`, build step, or copy of the viewer. The CLI supplies scaffold, serving, and static audit from its own installation. `serve` and `audit` leave project files unchanged unless an audit output file is explicitly requested.
 
-## Run through npx
+Pin the version in run commands or the global installation for reproducible team workflows. Product scripts implement mock screen interactions; they are authored content, not a local installation of KetAtlas. Framework tooling and tests stay in the KetAtlas repository.
 
-[KetAtlas is available on npm](https://www.npmjs.com/package/ketatlas). Create and run a project without cloning this repository:
-
-```sh
-npx ketatlas scaffold my-atlas --template web
-npx ketatlas serve my-atlas/atlas.json
-npx ketatlas audit my-atlas/atlas.json --strict
-```
-
-Pin a version, such as `npx ketatlas@0.1.0`, for reproducible team workflows.
-
-To try changes from a local checkout before publishing:
-
-```sh
-npx --yes --package ~/dev/ketatlas ketatlas scaffold my-atlas
-```
-
-Replace `~/dev/ketatlas` with your checkout path. Stable version increases merged into `develop` are automatically published after CI verifies the package. See [Releasing](docs/releasing.md) for setup and release steps.
+Edit the JSON and screen files, then refresh the browser. The default viewer address is **http://127.0.0.1:4178**.
 
 ## Create mockups with an agent
 
@@ -116,6 +100,19 @@ atlas.goToFlow("onboarding");
 Give the container a height. Ship `src/`, `styles/`, and `assets/` together. Shadow DOM isolates viewer styles and events; multiple viewers can coexist. For React or bundled applications, see [Integration](docs/integration.md).
 
 ## Explore and contribute
+
+To develop KetAtlas itself, clone this repository and install its development dependencies:
+
+```sh
+git clone git@github.com:ketvietlab/ketatlas.git
+cd ketatlas
+npm ci
+npm run dev
+```
+
+The playground includes mobile sign-in, desktop approval, and a fulfilment process. These development dependencies are not required in consumer projects. To try an unpublished checkout, use `npx --yes --package ~/dev/ketatlas ketatlas serve /path/to/my-atlas/atlas.json`.
+
+Stable version increases merged into `develop` are automatically published after CI verifies the package. See [Releasing](docs/releasing.md).
 
 - [Authoring guide](docs/authoring.md): screens, processes, branching, reuse, and viewport sizes.
 - [Configuration reference](docs/configuration.md): schema and defaults.

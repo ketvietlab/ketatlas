@@ -36,6 +36,8 @@ and preview the result. Return the serve command and verification results.
 
 `$ketatlas` is the explicit skill invocation in Codex. In other agents, use that agent's skill selector or explicitly ask it to use the installed KetAtlas skill. Keep the same product brief.
 
+The deliverable is data and product screen assets: JSON/schema, HTML/CSS/JavaScript, local assets, and documentation. Do not add a package manifest, lockfile, node_modules, or copied viewer/test tooling to make the atlas runnable. Use a global KetAtlas installation or a version-pinned npx command. Browser checks can use the agent's existing tooling outside the atlas folder.
+
 The agent should infer routine details and record assumptions. Provide an exact list when “all screens” means a defined inventory, so missing coverage can be checked against a source.
 
 ## Use a saved brief for larger projects
@@ -65,7 +67,8 @@ labelled transitions. Each named screen state must open directly.
 Use the generated ketatlas.schema.json. Run KetAtlas audit, test the
 important interactions in the viewer when browser automation is available,
 and report results or limitations. Include a README with run commands,
-flow coverage, demo inputs, and assumptions.
+flow coverage, demo inputs, and assumptions. Keep the output free of package
+manifests, lockfiles, local dependencies, and copied viewer/test tooling.
 ```
 
 For an existing prototype, ask the agent to reuse its HTML and add or update the atlas instead of rebuilding it. For later changes, name the flow or screen IDs to preserve, for example: **“Add an expired-code recovery branch to sign-in; keep existing screen IDs and audit the updated project.”**
@@ -79,4 +82,4 @@ npx ketatlas audit ./tasks/mobile/atlas.json --strict
 
 Check the delivered flow coverage against the brief. Open **Try this screen** to test the actual HTML. A successful audit confirms structural and local-file checks, not visual quality, full product coverage, or working production integrations. Intentional remote URLs require separate verification and produce strict-audit warnings.
 
-The skill lives in this repository so teams can review and evolve it alongside the schema and CLI. It works with the published `ketatlas@0.1.0` format; the skill itself can be distributed through GitHub without waiting for a new npm release.
+The skill lives in this repository so teams can review and evolve it alongside the schema and CLI. It works with the published `ketatlas@0.1.1` format; the skill itself can be distributed through GitHub without waiting for a new npm release.

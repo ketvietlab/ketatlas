@@ -2,6 +2,7 @@
 
 - Keep UI, CLI output, documentation, and code comments in English. User-authored atlas content may use any language.
 - Preserve the zero-runtime-dependency CLI and browser viewer. Keep JSON files as the source of truth.
+- Consumer atlas folders contain JSON/schema, product screen assets, and docs only. Do not require local package manifests, dependencies, or copied framework/build/test tooling for CLI use.
 - Keep the schema, runtime validator, TypeScript declarations, templates, documentation, and `skills/ketatlas/SKILL.md` aligned when changing the public contract.
 - Use the pinned KetJS design system for viewer tokens and primitives. Regenerate vendor assets; do not manually fork their values.
 - Test changed behavior with the relevant unit, CLI, or automated browser checks. Inspect browser screenshots in `artifacts/` for UI changes. Do not use manual browser control as test evidence.

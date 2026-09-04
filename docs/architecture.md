@@ -15,6 +15,12 @@ atlas.json + screen HTML
                        └── lazy HTML iframes + interactive inspector
 ```
 
+## Consumer boundary
+
+KetAtlas is installed globally or executed through npx. Consumers provide JSON, a schema, HTML/CSS/JavaScript mock screens, assets, and documentation. They do not need a Node package, lockfile, development dependencies, viewer implementation, or build/test scripts to scaffold, serve, or audit a map.
+
+The package owns the CLI, viewer, validation, and framework verification. A product may have its own application tests elsewhere; those are independent of the map format. Static audit does not simulate product interactions. Agent browser checks can run through external tooling without adding a test harness to the delivered atlas folder.
+
 ## Ownership
 
 | Directory         | Responsibility                                                |
