@@ -6,6 +6,12 @@ Turn a JSON file and your existing HTML screens into a canvas you can drag, zoom
 
 KetAtlas has an English UI, zero runtime npm dependencies, and no build step. Node.js **22+** is needed for the CLI. Viewers use native ES modules and run on an HTTP server.
 
+## Demo
+
+See a mobile workflow map in action: explore connected screens and try the HTML prototype.
+
+https://github.com/user-attachments/assets/13f24fc8-7b8e-4bda-9e02-364c120ee163
+
 ## Start from this repository
 
 ```sh
