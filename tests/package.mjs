@@ -43,6 +43,24 @@ let child, browser;
 try {
   const run = (args) => execFileSync("npm", [...npmArgs, ...args], { cwd: temp, encoding: "utf8" });
   assert.equal(run(["--version"]).trim(), info.version);
+  const publishPreview = JSON.parse(
+    execFileSync(
+      "npm",
+      [
+        "publish",
+        archive,
+        "--dry-run",
+        "--json",
+        "--offline",
+        "--ignore-scripts",
+        "--access",
+        "public",
+      ],
+      { cwd: temp, encoding: "utf8" },
+    ),
+  );
+  assert.equal(publishPreview.name, "ketatlas");
+  assert.equal(publishPreview.version, info.version);
   // Both execution modes keep package machinery outside the consumer project.
   const prefix = join(temp, "global-cli");
   execFileSync(
@@ -193,6 +211,7 @@ try {
         unpackedSize: info.unpackedSize,
         checks: [
           "offline npm exec",
+          "publish dry run uses an absolute archive path",
           "isolated global installation",
           "all three templates need no consumer package manifest or dependencies",
           "scaffold, audit, validate, and serve preserve consumer files",

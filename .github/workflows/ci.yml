@@ -3,6 +3,12 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      before_sha:
+        description: "Previous 40-character commit SHA from the original failed release push"
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -31,7 +37,7 @@ jobs:
   publish:
     name: Publish new version from develop
     needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:
@@ -53,7 +59,7 @@ jobs:
         id: release
         run: node scripts/release.mjs
         env:
-          BEFORE_SHA: ${{ github.event.before }}
+          BEFORE_SHA: ${{ github.event.before || inputs.before_sha }}
       - name: Download the tested package
         if: steps.release.outputs.publish == 'true'
         uses: actions/download-artifact@v4
@@ -70,7 +76,12 @@ jobs:
             echo "::error::Add the NPM_PUBLISH_TOKEN repository secret before publishing."
             exit 1
           fi
-          npm publish "artifacts/ketatlas-${RELEASE_VERSION}.tgz" --access public --tag latest --provenance
+          archive="$GITHUB_WORKSPACE/artifacts/ketatlas-${RELEASE_VERSION}.tgz"
+          if [ ! -f "$archive" ]; then
+            echo "::error::The tested package archive was not downloaded: $archive"
+            exit 1
+          fi
+          npm publish "$archive" --access public --tag latest --provenance
       - name: Verify the public release
         if: steps.release.outputs.publish == 'true'
         env:

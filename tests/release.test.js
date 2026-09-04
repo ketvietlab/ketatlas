@@ -87,6 +87,17 @@ test("release check compares the previous develop commit, handles first push, an
     );
     await writeVersion("0.1.1");
     assert.equal((await checkRelease({ root, beforeSha, fetchImpl })).publish, true);
+    const orphan = git([
+      "-c",
+      "user.name=Release Test",
+      "-c",
+      "user.email=test@example.test",
+      "commit-tree",
+      "HEAD^{tree}",
+      "-m",
+      "Unrelated history",
+    ]);
+    await assert.rejects(checkRelease({ root, beforeSha: orphan, fetchImpl: noFetch }), /ancestor/);
     await writeVersion("0.1.1", "0.1.0");
     await assert.rejects(checkRelease({ root, beforeSha, fetchImpl }), /must match/);
     await writeVersion("0.0.9");

@@ -69,6 +69,14 @@ export async function checkRelease({ root = process.cwd(), beforeSha, fetchImpl 
   }
   let previousVersion = null;
   if (!/^0+$/.test(beforeSha)) {
+    try {
+      execFileSync("git", ["merge-base", "--is-ancestor", beforeSha, "HEAD"], {
+        cwd: root,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+    } catch {
+      throw new Error("BEFORE_SHA must be an ancestor of the release commit.");
+    }
     const before = JSON.parse(
       execFileSync("git", ["show", `${beforeSha}:package.json`], {
         cwd: root,

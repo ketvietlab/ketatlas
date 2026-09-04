@@ -18,7 +18,7 @@ npm version patch --no-git-tag-version
 
 Use `minor` or `major` when appropriate. Move the relevant changelog entries under the new version, commit both version files with the changes, and merge the pull request into `develop`.
 
-The [CI workflow](../.github/workflows/ci.yml) runs on pull requests and branch pushes. Publishing runs only on pushes to `develop`, including merge commits, squash merges, and direct pushes:
+The [CI workflow](../.github/workflows/ci.yml) runs on pull requests and branch pushes. Automatic publishing runs on pushes to `develop`, including merge commits, squash merges, and direct pushes. An explicit workflow dispatch on `develop` can retry an unpublished release after a workflow fix:
 
 1. Formatting, configuration audits, unit tests, browser tests, and a packed-install test must pass.
 2. The version must increase from `package.json` at the push event's previous commit. The lockfile must agree. Automatic releases accept stable `major.minor.patch` versions; prereleases fail with an explanation.
@@ -43,17 +43,25 @@ The package test creates a real archive, invokes its CLI through `npm exec` with
 
 ## Retry a failed release
 
-Fix a missing or expired repository secret, then rerun the failed workflow. If npm already accepted the version, the rerun skips publication. Check npm before changing the version after a timeout: a publish may have succeeded even if the final visibility check failed.
+For a missing or expired repository secret, fix the secret and rerun the failed workflow. If the workflow itself needed a fix in a later commit, dispatch the updated workflow on `develop` with the **previous commit SHA from the original failed release push**:
+
+```sh
+gh workflow run ci.yml --ref develop -f before_sha=<original-40-character-before-sha>
+```
+
+The supplied SHA must be an ancestor of the checked-out release commit. The version must still increase from that baseline, all verification runs again, and npm must not already contain that version. This retry uses the same tested archive and provenance path; it does not disable release gates.
+
+If npm already accepted the version, the rerun skips publication. Check npm before changing the version after a timeout: a publish may have succeeded even if the final visibility check failed.
 
 Do not reuse a published version for changed package contents. Bump the version again for the next release. A failed verification must be fixed and all checks rerun before publishing.
 
 After a successful release, verify outside the checkout with the released version:
 
 ```sh
-npx ketatlas@0.1.0 --version
-npx ketatlas@0.1.0 scaffold /tmp/ketatlas-release-check
-npx ketatlas@0.1.0 audit /tmp/ketatlas-release-check/atlas.json --strict
-npx ketatlas@0.1.0 serve /tmp/ketatlas-release-check/atlas.json
+npx ketatlas@0.1.1 --version
+npx ketatlas@0.1.1 scaffold /tmp/ketatlas-release-check
+npx ketatlas@0.1.1 audit /tmp/ketatlas-release-check/atlas.json --strict
+npx ketatlas@0.1.1 serve /tmp/ketatlas-release-check/atlas.json
 ```
 
 ## Token maintenance

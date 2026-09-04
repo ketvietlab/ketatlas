@@ -2,6 +2,8 @@
 
 ## 0.1.1 — 2026-09-04
 
+- Publish the tested archive through an absolute file path; support guarded retries after a CI workflow fix.
+
 - Clarify the consumer contract: JSON, product screens, assets, and docs only; verify global and npx usage without project manifests or dependencies.
 
 - Portable KetAtlas agent skill and a product-brief workflow for generating compatible interactive HTML mockups.
