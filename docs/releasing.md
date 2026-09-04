@@ -19,6 +19,8 @@ The package test creates a real archive, invokes its CLI through `npm exec` with
 
 An npm release is an explicit maintainer action. Confirm npm ownership of the unscoped `ketatlas` name and authenticate with an account allowed to publish it. Do not put credentials in repository files.
 
+For interactive publishing, [configure two-factor authentication on your npm account](https://docs.npmjs.com/configuring-two-factor-authentication/) and complete the verification requested during publication. A successful `npm whoami` confirms login but does not guarantee that publishing authentication requirements are met. Keep recovery codes and credentials private.
+
 ```sh
 npm whoami
 npm publish --access public

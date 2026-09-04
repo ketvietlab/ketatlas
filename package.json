@@ -21,7 +21,7 @@
     "./schema.json": "./schema.json"
   },
   "bin": {
-    "ketatlas": "./bin/ketatlas.js"
+    "ketatlas": "bin/ketatlas.js"
   },
   "files": [
     "src",
