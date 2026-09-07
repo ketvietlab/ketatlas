@@ -45,7 +45,73 @@ export interface AtlasConfig {
   screens?: AtlasScreen[];
   flows: AtlasFlow[];
 }
+export type ProgressStatus =
+  | "unassessed"
+  | "planned"
+  | "in_progress"
+  | "in_review"
+  | "implemented"
+  | "verified";
+export interface ProgressEvidence {
+  id: string;
+  kind: "pr" | "test" | "release" | "reference";
+  title: string;
+  url: string;
+  state?: string;
+  revision?: string;
+  environment?: string;
+  observedAt?: string;
+}
+export interface ProgressCheck {
+  id: string;
+  title: string;
+  done: boolean;
+  evidenceIds?: string[];
+  nodes?: { flowId: string; nodeId: string }[];
+}
+export interface ScreenProgress {
+  status: ProgressStatus;
+  owner?: string;
+  summary?: string;
+  blocker?: string;
+  updatedAt?: string;
+  tasks?: string[];
+  checks?: ProgressCheck[];
+  evidence?: ProgressEvidence[];
+}
+export interface AtlasProgress {
+  version: 1;
+  screens: Record<string, ScreenProgress>;
+}
+export interface ProgressSnapshot {
+  data: AtlasProgress;
+  revision: string;
+}
+export const progressStatuses: Record<ProgressStatus, string>;
+export function validateProgress(
+  data: unknown,
+  atlas: AtlasConfig,
+): { valid: boolean; errors: ValidationIssue[] };
+export function summarizeProgress(
+  data: AtlasProgress,
+  screens: AtlasScreen[],
+): { total: number; counts: Record<ProgressStatus, number>; blocked: number };
 export interface AtlasOptions {
+  /** Optional progress for createAtlas or to override loadAtlas sidecar discovery. */
+  progress?: AtlasProgress;
+  /** Override the default <atlas-name>.progress.json URL for loadAtlas. */
+  progressURL?: string;
+  progressRevision?: string;
+  /** Host persistence adapters; only provided by the local CLI by default. */
+  saveProgress?: (
+    screenId: string,
+    record: ScreenProgress,
+    revision: string,
+  ) => Promise<ProgressSnapshot>;
+  reloadProgress?: () => Promise<ProgressSnapshot>;
+  /** Local CLI editor endpoint and per-server write capability. */
+  progressEndpoint?: string;
+  progressToken?: string;
   /** Relative screen URLs resolve against this URL. loadAtlas uses the JSON URL by default. */
   baseURL?: string;
   /** Public directory containing styles/ and assets/, ending in /. Needed when bundling the JS. */

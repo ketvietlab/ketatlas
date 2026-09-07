@@ -1,3 +1,6 @@
+import { mountProgress } from "./progress-ui.js";
+import { emptyProgress, requireProgress } from "./progress.js";
+export { validateProgress, summarizeProgress, progressStatuses } from "./progress.js";
 import { normalizeAtlas, safeURL } from "./config.js";
 import { layoutAtlas, edgePath } from "./layout.js";
 import { template, escapeHTML as e } from "./template.js";
@@ -9,6 +12,7 @@ export function createAtlas(container, input, options = {}) {
   if (!(container instanceof HTMLElement))
     throw new TypeError("createAtlas requires an HTML element.");
   const config = normalizeAtlas(input, options.baseURL || document.baseURI);
+  const progressData = requireProgress(options.progress || emptyProgress(), config);
   const maxPreviews = options.maxPreviews ?? 24,
     previewThreshold = options.previewThreshold ?? 0.3;
   if (!Number.isInteger(maxPreviews) || maxPreviews < 1 || maxPreviews > 64)
@@ -182,7 +186,7 @@ export function createAtlas(container, input, options = {}) {
             : f.ends.includes(n.key)
               ? `<span class="node-badge destination">${icon("circle-check")}Outcome</span>`
               : "";
-      return `<article class="flow-node ${n.kind !== "screen" ? "external" : ""}" data-node="${n.uid}" data-screen-id="${n.screenId || ""}" data-flow-id="${f.id}" style="left:${n.x}px;top:${n.y}px;height:${n.height}px;--node-width:${n.width}px;--preview-width:${n.previewWidth}px;--preview-height:${n.previewHeight}px;--screen-width:${n.screen?.viewport.width || 0}px;--screen-height:${n.screen?.viewport.height || 0}px;--preview-scale:${n.screen ? n.previewWidth / n.screen.viewport.width : 1}" tabindex="0" aria-label="${e(n.title)}${n.screenId ? " · " + n.screenId : ""}">${badge}${n.kind !== "screen" ? `<span class="external-icon">${icon(n.kind === "external" ? "arrow-up-right" : "file-text")}</span><small>${n.kind === "external" ? "EXTERNAL STEP" : "PROCESS STEP"}</small><h3>${e(n.title)}</h3><p>${e(n.description)}</p>` : `<header class="node-head"><small>${n.screenId}${n.url !== n.screen?.url ? " · Variant" : ""}</small><h3>${e(n.title)}</h3></header><div class="node-preview"><div class="node-placeholder"><span></span><span></span><span></span><p>Zoom in to see<br>the live screen</p></div></div><footer class="node-foot"><span>HTML · ${e(n.screen.badge || "Preview")}</span><button data-open="${n.uid}" aria-label="Open ${e(n.title)}">Open screen ${icon("arrow-up-right")}</button></footer>`}</article>`;
+      return `<article class="flow-node ${n.kind !== "screen" ? "external" : ""}" data-node="${n.uid}" data-screen-id="${n.screenId || ""}" data-flow-id="${f.id}" style="left:${n.x}px;top:${n.y}px;height:${n.height}px;--node-width:${n.width}px;--preview-width:${n.previewWidth}px;--preview-height:${n.previewHeight}px;--screen-width:${n.screen?.viewport.width || 0}px;--screen-height:${n.screen?.viewport.height || 0}px;--preview-scale:${n.screen ? n.previewWidth / n.screen.viewport.width : 1}" tabindex="0" aria-label="${e(n.title)}${n.screenId ? " · " + n.screenId : ""}">${badge}${n.kind !== "screen" ? `<span class="external-icon">${icon(n.kind === "external" ? "arrow-up-right" : "file-text")}</span><small>${n.kind === "external" ? "EXTERNAL STEP" : "PROCESS STEP"}</small><h3>${e(n.title)}</h3><p>${e(n.description)}</p>` : `<header class="node-head"><small>${n.screenId}${n.url !== n.screen?.url ? " · Variant" : ""}</small><h3>${e(n.title)}</h3></header><div class="node-preview"><div class="node-placeholder"><span></span><span></span><span></span><p>Zoom in to see<br>the live screen</p></div></div><footer class="node-foot"><span data-progress-screen="${n.screenId}"></span><span>HTML · ${e(n.screen.badge || "Preview")}</span><button data-open="${n.uid}" aria-label="Open ${e(n.title)}">Open screen ${icon("arrow-up-right")}</button></footer>`}</article>`;
     })
     .join("");
   for (const n of nodes) n.element = viewport.querySelector(`[data-node="${n.uid}"]`);
@@ -332,7 +336,7 @@ export function createAtlas(container, input, options = {}) {
       }
     for (const key of connected) nodeByKey.get(key)?.element.classList.add("related-node");
     $("node-details").innerHTML =
-      `<div class="detail-head"><div class="grow"><small>${e(n.screenId || "Process step")}</small><h3>${e(n.title)}</h3></div><button class="icon-button" data-clear-selection aria-label="Clear selection">${icon("x")}</button></div><h4>Next steps</h4>${
+      `<div class="detail-head"><div class="grow"><small>${e(n.screenId || "Process step")}</small><h3>${e(n.title)}</h3></div><button class="icon-button" data-clear-selection aria-label="Clear selection">${icon("x")}</button></div><div data-progress-screen="${e(n.screenId || "")}"></div>${n.screenId ? `<button data-edit-progress="${e(n.screenId)}" data-ui="action" data-variant="secondary">Screen progress</button>` : ""}<h4>Next steps</h4>${
         edges.length
           ? edges
               .map((a) => {
@@ -342,6 +346,8 @@ export function createAtlas(container, input, options = {}) {
               .join("")
           : "<p>This is the end of this flow.</p>"
       }${n.screenId ? `<button data-open="${n.uid}" data-ui="action" data-variant="primary">Try this screen</button>` : `<p>${e(n.description)}</p>${n.url ? `<a data-ui="action" data-variant="secondary" href="${e(n.url)}" target="_blank" rel="noopener noreferrer">Open reference ${icon("arrow-up-right")}</a>` : ""}`}`;
+    if (!n.screenId) $("node-details").querySelector("[data-progress-screen]").remove();
+    progressUI.paint();
     $("node-details").hidden = false;
     emit("select", { flowId: n.flowId, nodeId: n.id });
     minimap();
@@ -538,6 +544,19 @@ export function createAtlas(container, input, options = {}) {
     const n = event.target.closest("[data-node]");
     if (n && !event.target.closest("button")) openScreen(nodeByKey.get(n.dataset.node));
   });
+  const progressUI = mountProgress(root, config, progressData, options, (id) => {
+    const n = nodes.find((n) => n.screenId === id);
+    if (n) {
+      setCurrent(flowById.get(n.flowId));
+      focusNode(n, true);
+      selectNode(n);
+    }
+  });
+  $("open-progress").onclick = () => progressUI.open();
+  $("node-details").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-edit-progress]");
+    if (button) progressUI.edit(button.dataset.editProgress);
+  });
   $("flow-search").addEventListener("input", sidebar);
   $("zoom-in").onclick = () => zoomTo(view.z * 1.2);
   $("zoom-out").onclick = () => zoomTo(view.z / 1.2);
@@ -665,8 +684,42 @@ export async function loadAtlas(container, url, options = {}) {
   const response = await fetch(absolute, { signal: options.signal });
   if (!response.ok) throw new Error(`Cannot load atlas: HTTP ${response.status} (${absolute})`);
   const config = await response.json();
+  let progressOptions = {};
+  if (options.progressEndpoint) {
+    const endpoint = safeURL(options.progressEndpoint, absolute);
+    const reloadProgress = async () => {
+      const r = await fetch(endpoint, { signal: options.signal, cache: "no-store" });
+      if (!r.ok) throw new Error(`Cannot load progress: HTTP ${r.status}`);
+      return r.json();
+    };
+    const result = await reloadProgress();
+    progressOptions = { progress: result.data, progressRevision: result.revision, reloadProgress };
+    if (result.editable && options.progressToken)
+      progressOptions.saveProgress = async (screenId, record, revision) => {
+        const r = await fetch(endpoint, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "If-Match": revision,
+            "X-KetAtlas-Token": options.progressToken,
+          },
+          body: JSON.stringify({ screenId, record }),
+        });
+        const result = await r.json();
+        if (!r.ok) throw new Error(result.error || `Cannot save: HTTP ${r.status}`);
+        return result;
+      };
+  } else if (!options.progress) {
+    const progressURL = new URL(safeURL(options.progressURL || absolute, absolute));
+    if (!options.progressURL)
+      progressURL.pathname = progressURL.pathname.replace(/\.json$/i, "") + ".progress.json";
+    const r = await fetch(progressURL, { signal: options.signal });
+    if (r.ok) progressOptions.progress = await r.json();
+    else if (r.status !== 404) throw new Error(`Cannot load progress: HTTP ${r.status}`);
+  }
   const atlas = createAtlas(container, config, {
     ...options,
+    ...progressOptions,
     baseURL: options.baseURL || response.url || absolute,
   });
   try {

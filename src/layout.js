@@ -29,7 +29,7 @@ export function layoutAtlas(config) {
         width: cardWidth,
         previewWidth,
         previewHeight,
-        height: v ? Math.ceil(previewHeight) + 92 : 230,
+        height: v ? Math.ceil(previewHeight) + 120 : 230,
       };
     });
     const cols = [],

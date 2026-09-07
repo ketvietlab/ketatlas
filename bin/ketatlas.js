@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { progressPath, readProgress, saveProgress } from "./progress.js";
+import { summarizeProgress } from "../src/progress.js";
 import { readFile, readdir, mkdir, cp, writeFile, stat } from "node:fs/promises";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +15,8 @@ const help = `KetAtlas — scaffold, serve, and audit HTML workflow maps
   ketatlas serve <atlas.json> [--port 4178] [--root directory]
   ketatlas audit <atlas.json> [--root directory] [--json] [--strict]
   ketatlas validate <atlas.json>
+  ketatlas progress <atlas.json> [--json] [--init]
+  ketatlas progress <atlas.json> --set <screen-id> --record <record.json> --expect <revision>
   ketatlas --version
 
 Examples:
@@ -118,8 +122,58 @@ async function main(args) {
     );
     return;
   }
+  if (command === "progress") {
+    const { target, options } = parse(rest, {
+      json: "boolean",
+      init: "boolean",
+      set: "string",
+      record: "string",
+      expect: "string",
+    });
+    const file = resolve(target),
+      atlas = JSON.parse(await readFile(file, "utf8"));
+    const valid = validateAtlas(atlas);
+    if (!valid.valid) throw new Error(valid.errors.map((e) => e.message).join("; "));
+    const path = progressPath(file);
+    let result = await readProgress(path, atlas);
+    if (options.init) {
+      if (options.set || options.record || options.expect)
+        throw new Error("Use --init separately from an update.");
+      if (result.revision !== "missing") throw new Error("Progress already exists.");
+      result = await saveProgress(path, file, "missing", (data) => {
+        for (const s of atlas.screens || [])
+          Object.defineProperty(data.screens, s.id, {
+            value: { status: "unassessed" },
+            enumerable: true,
+          });
+        return data;
+      });
+    } else if (options.set || options.record || options.expect) {
+      if (!options.set || !options.record || !options.expect)
+        throw new Error("Updates need --set, --record and --expect from progress --json.");
+      const record = JSON.parse(await readFile(resolve(options.record), "utf8"));
+      result = await saveProgress(path, file, options.expect, (data) => {
+        Object.defineProperty(data.screens, options.set, {
+          value: { ...record, updatedAt: new Date().toISOString() },
+          enumerable: true,
+        });
+        return data;
+      });
+    }
+    const summary = summarizeProgress(result.data, atlas.screens || []);
+    console.log(
+      options.json
+        ? JSON.stringify({ ...result, summary }, null, 2)
+        : `${summary.total} screens · ${summary.counts.verified} verified · ${summary.blocked} blocked\nRevision: ${result.revision}\n${path}`,
+    );
+    return;
+  }
   if (command === "serve") {
-    const { target, options } = parse(rest, { port: "string", root: "string" }),
+    const { target, options } = parse(rest, {
+        port: "string",
+        root: "string",
+        "read-only": "boolean",
+      }),
       port = Number(options.port || 4178);
     if (!Number.isInteger(port) || port < 1 || port > 65535)
       throw new Error("Port must be 1–65535.");
@@ -128,7 +182,7 @@ async function main(args) {
       throw new Error("--root is only needed when serving an atlas JSON file.");
     const server = directory
       ? await serve(target, { port })
-      : await serveAtlas(target, { port, root: options.root });
+      : await serveAtlas(target, { port, root: options.root, readOnly: options["read-only"] });
     console.log(
       `KetAtlas: http://127.0.0.1:${server.address().port}\nServing ${resolve(target)}\nPress Ctrl+C to stop.`,
     );

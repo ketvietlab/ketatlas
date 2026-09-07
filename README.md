@@ -17,21 +17,21 @@ https://github.com/user-attachments/assets/13f24fc8-7b8e-4bda-9e02-364c120ee163
 [KetAtlas is available on npm](https://www.npmjs.com/package/ketatlas). Use Node.js 22+ and run it from any directory:
 
 ```sh
-npx --yes ketatlas@0.1.1 scaffold my-atlas --template web
-npx --yes ketatlas@0.1.1 serve my-atlas/atlas.json
-npx --yes ketatlas@0.1.1 audit my-atlas/atlas.json --strict
+npx --yes ketatlas@0.2.0 scaffold my-atlas --template web
+npx --yes ketatlas@0.2.0 serve my-atlas/atlas.json
+npx --yes ketatlas@0.2.0 audit my-atlas/atlas.json --strict
 ```
 
 Or install the CLI once for your user account:
 
 ```sh
-npm install --global ketatlas@0.1.1
+npm install --global ketatlas@0.2.0
 ketatlas scaffold my-atlas
 ketatlas serve my-atlas/atlas.json
 ketatlas audit my-atlas/atlas.json --strict
 ```
 
-The consumer folder contains `atlas.json`, its schema, product HTML/CSS/JavaScript, local assets, and documentation. It needs no `package.json`, lockfile, `node_modules`, build step, or copy of the viewer. The CLI supplies scaffold, serving, and static audit from its own installation. `serve` and `audit` leave project files unchanged unless an audit output file is explicitly requested.
+The consumer folder contains `atlas.json`, its schema, product HTML/CSS/JavaScript, local assets, and documentation. It needs no `package.json`, lockfile, `node_modules`, build step, or copy of the viewer. The CLI supplies scaffold, serving, and static audit from its own installation. `audit` leaves project files unchanged unless an output file is explicitly requested. Viewing with `serve` does not write; explicit **Save progress** writes the sibling progress file. Use `--read-only` to disable editing.
 
 Pin the version in run commands or the global installation for reproducible team workflows. Product scripts implement mock screen interactions; they are authored content, not a local installation of KetAtlas. Framework tooling and tests stay in the KetAtlas repository.
 
@@ -74,6 +74,10 @@ See [Agent mockups](docs/agent-mockups.md) for installation options, a ready-to-
 ```
 
 URLs resolve relative to the JSON file. Nodes default to a left-to-right row. Set `column` and `row` for branches; set each screen's `viewport` for mobile or desktop dimensions. Reuse a screen in many flows without duplicating its HTML.
+
+## Track delivery
+
+Open **Screens** to filter screen progress, review blockers and edit acceptance checks with PR/test evidence. Records live in a sibling `atlas.progress.json` tracked in Git; repeated nodes share one screen record. A merged PR is not a verified screen. Local saves detect concurrent edits; static hosting is read-only. See [Screen progress](docs/progress.md) for the contract, CLI and embedding API.
 
 ## Commands
 

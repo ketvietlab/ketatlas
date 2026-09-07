@@ -1,3 +1,4 @@
+import { readProgress, progressPath } from "./progress.js";
 import { readFile, realpath, stat } from "node:fs/promises";
 import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -92,6 +93,13 @@ export async function auditAtlas(file, { root: rootOption } = {}) {
     for (const s of config.screens || []) await inspect(s.url, absolute, `screen:${s.id}`);
     for (const f of config.flows)
       for (const n of f.nodes) if (n.url) await inspect(n.url, absolute, `node:${f.id}/${n.id}`);
+  }
+  if (result.valid) {
+    try {
+      await readProgress(progressPath(absolute), config);
+    } catch (e) {
+      errors.push({ path: "progress", message: e.message });
+    }
   }
   for (const url of remote)
     warnings.push({ path: "remote", message: `Remote URL not fetched: ${url}` });

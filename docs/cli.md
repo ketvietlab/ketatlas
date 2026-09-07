@@ -70,3 +70,7 @@ ketatlas --help
 ```
 
 `validate` checks configuration and graph references only. It is also available as `validateAtlas(data)` in JavaScript. JSON Schema supports editor completion; graph-reference and URL safety checks belong to the runtime validator and audit.
+
+## Screen progress
+
+`progress <atlas.json> --json` reads the progress record, content revision and unique-screen summary. `--init` creates a missing sidecar. `--set <screen-id> --record <record.json> --expect <revision>` replaces one record with conflict detection. `serve <atlas.json> --read-only` disables local progress writes. See [Screen progress](progress.md) for examples and persistence rules.

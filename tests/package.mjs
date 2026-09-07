@@ -30,6 +30,10 @@ for (const path of [
   "templates/process/atlas.json",
   "src/index.d.ts",
   "schema.json",
+  "progress.schema.json",
+  "bin/progress.js",
+  "src/progress.js",
+  "src/progress-ui.js",
   "skills/ketatlas/SKILL.md",
   "docs/agent-mockups.md",
 ])
@@ -158,6 +162,17 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(url);
   await page.waitForFunction(() => typeof window.atlas?.getState === "function");
+  await page.getByRole("button", { name: "Screens", exact: true }).click();
+  await page.locator("[data-progress-edit]").first().click();
+  await page.locator('[data-record="owner"]').fill("Package test");
+  await page.getByRole("button", { name: "Save progress", exact: true }).click();
+  await page.waitForFunction(
+    () => !document.querySelector(".ketatlas").shadowRoot.getElementById("progress-editor").open,
+  );
+  const savedProgress = JSON.parse(await readFile(join(project, "atlas.progress.json"), "utf8"));
+  assert(Object.values(savedProgress.screens).some((r) => r.owner === "Package test"));
+  await page.locator("[data-close-screens]").click();
+  await rm(join(project, "atlas.progress.json"));
   assert.equal(await page.locator(".flow-link").count(), 1);
   await page
     .frameLocator('[data-node="purchase:inbox"] iframe')
@@ -190,6 +205,17 @@ try {
     assert(ready, npxOutput);
     await page.goto(`http://127.0.0.1:${npxPort}`);
     await page.waitForFunction(() => typeof window.atlas?.getState === "function");
+    await page.getByRole("button", { name: "Screens", exact: true }).click();
+    await page.locator("[data-progress-edit]").first().click();
+    await page.locator('[data-record="owner"]').fill("Package test");
+    await page.getByRole("button", { name: "Save progress", exact: true }).click();
+    await page.waitForFunction(
+      () => !document.querySelector(".ketatlas").shadowRoot.getElementById("progress-editor").open,
+    );
+    const savedProgress = JSON.parse(await readFile(join(project, "atlas.progress.json"), "utf8"));
+    assert(Object.values(savedProgress.screens).some((r) => r.owner === "Package test"));
+    await page.locator("[data-close-screens]").click();
+    await rm(join(project, "atlas.progress.json"));
     assert.equal(await page.locator(".flow-link").count(), 1);
   } finally {
     if (npxServer) {
