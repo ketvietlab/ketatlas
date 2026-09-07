@@ -1258,12 +1258,12 @@ a svg {
   width: 100%;
 }
 .progress-editor > .progress-header {
-  position: sticky;
-  top: 0;
+  position: static;
+  flex: none;
   background: var(--kv-panel-bg);
   z-index: 2;
   border-bottom: 1px solid var(--kv-border-default);
-  padding-bottom: var(--kv-space-3);
+  padding: var(--progress-dialog-padding);
 }
 .progress-editor .progress-actions {
   position: sticky;
@@ -1418,4 +1418,25 @@ a svg {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+}
+
+.progress-editor {
+  --progress-dialog-padding: var(--kv-space-6);
+  padding: 0;
+  overflow: hidden;
+}
+.progress-editor[open] {
+  display: flex;
+  flex-direction: column;
+}
+.progress-editor > #progress-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 var(--progress-dialog-padding) var(--progress-dialog-padding);
+}
+@media (max-width: 760px) {
+  .progress-editor {
+    --progress-dialog-padding: var(--kv-space-3);
+  }
 }
