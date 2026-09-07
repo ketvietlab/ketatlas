@@ -1,6 +1,11 @@
 import { mountProgress } from "./progress-ui.js";
 import { emptyProgress, requireProgress } from "./progress.js";
-export { validateProgress, summarizeProgress, progressStatuses } from "./progress.js";
+export {
+  validateProgress,
+  summarizeProgress,
+  summarizeFlowProgress,
+  progressStatuses,
+} from "./progress.js";
 import { normalizeAtlas, safeURL } from "./config.js";
 import { layoutAtlas, edgePath } from "./layout.js";
 import { template, escapeHTML as e } from "./template.js";
@@ -117,6 +122,7 @@ export function createAtlas(container, input, options = {}) {
   world.style.height = height + "px";
   $("map-total").textContent = `${flows.length} flows · ${screens.size} screens`;
   const groups = [...new Set(flows.map((f) => f.group))];
+  let progressUI;
   function sidebar() {
     const q = normalize($("flow-search").value);
     $("flow-list").innerHTML =
@@ -130,10 +136,11 @@ export function createAtlas(container, input, options = {}) {
               ).includes(q),
           );
           return matches.length
-            ? `<section><h2 class="flow-group-title">${e(group)}</h2>${matches.map((f) => `<button class="flow-link ${f === current ? "active" : ""}" data-flow="${f.id}" ${f === current ? 'aria-current="true"' : ""}><span class="flow-number">${String(f.index + 1).padStart(2, "0")}</span><span><strong>${e(f.title)}</strong><small>${f.nodes.length} steps${f.edges.some((a) => a.kind === "recovery") ? " · Recovery branch" : ""}</small></span></button>`).join("")}</section>`
+            ? `<section><h2 class="flow-group-title">${e(group)}</h2>${matches.map((f) => `<button class="flow-link ${f === current ? "active" : ""}" data-flow="${f.id}" ${f === current ? 'aria-current="true"' : ""}><span class="flow-number">${String(f.index + 1).padStart(2, "0")}</span><span class="flow-link-copy"><strong>${e(f.title)}</strong><small>${f.nodes.length} steps <span class="flow-progress" data-progress-flow="${f.id}"></span></small></span></button>`).join("")}</section>`
             : "";
         })
         .join("") || '<p class="mock-filter-empty">No matching workflows.</p>';
+    progressUI?.paintSidebar();
   }
   const defs = `<defs>${[
     ["main", "--kv-accent"],
@@ -544,7 +551,7 @@ export function createAtlas(container, input, options = {}) {
     const n = event.target.closest("[data-node]");
     if (n && !event.target.closest("button")) openScreen(nodeByKey.get(n.dataset.node));
   });
-  const progressUI = mountProgress(root, config, progressData, options, (id) => {
+  progressUI = mountProgress(root, config, progressData, options, (id) => {
     const n = nodes.find((n) => n.screenId === id);
     if (n) {
       setCurrent(flowById.get(n.flowId));

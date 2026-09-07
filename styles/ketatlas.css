@@ -1284,3 +1284,76 @@ a svg {
   color: var(--kv-text-muted);
   font-weight: 400;
 }
+
+/* Compact verified-screen badges; detailed counts live in the tooltip. */
+.flow-link-copy {
+  min-width: 0;
+  flex: 1;
+}
+.flow-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 34px;
+  height: 20px;
+  padding: 0 var(--kv-space-1);
+  border-radius: var(--kv-radius-full);
+  background: var(--kv-surface-hover);
+  color: var(--kv-text-muted);
+  font-size: var(--kv-text-2xs);
+  font-weight: var(--kv-weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: normal;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.flow-progress[hidden] {
+  display: none;
+}
+.flow-progress[data-tone="blocked"] {
+  color: var(--kv-warning);
+}
+.flow-progress[data-tone="complete"] {
+  color: var(--kv-positive);
+}
+
+.project-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--kv-space-3);
+  margin-right: var(--kv-space-2);
+  color: var(--kv-text-muted);
+  font-size: var(--kv-text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.project-progress[hidden] {
+  display: none;
+}
+.project-progress b {
+  color: var(--kv-text-main);
+  font-weight: var(--kv-weight-semibold);
+}
+.project-progress .project-blocked,
+.project-progress .project-blocked b {
+  color: var(--kv-warning);
+}
+@container (max-width: 1000px) {
+  .map-header {
+    height: auto;
+    min-height: 72px;
+    flex-wrap: wrap;
+    gap: var(--kv-space-2);
+  }
+  .map-header-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+  .project-progress {
+    margin-right: auto;
+    gap: var(--kv-space-2);
+    font-size: var(--kv-text-2xs);
+  }
+}

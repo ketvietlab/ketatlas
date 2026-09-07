@@ -1,5 +1,11 @@
 import { escapeHTML as e } from "./template.js";
-import { progressFor, progressStatuses, summarizeProgress, requireProgress } from "./progress.js";
+import {
+  progressFor,
+  progressStatuses,
+  summarizeProgress,
+  summarizeFlowProgress,
+  requireProgress,
+} from "./progress.js";
 import { safeURL } from "./config.js";
 const optionsHTML = (values, selected) =>
   Object.entries(values)
@@ -32,7 +38,40 @@ export function mountProgress(root, config, initial, options, selectScreen) {
   const badge = (r) =>
     `<span class="progress-badge" data-status="${e(r.status)}">${e(progressStatuses[r.status])}</span>${r.blocker?.trim() ? '<span class="progress-blocked">Blocked</span>' : ""}`;
   const record = (id) => progressFor(data, id);
+  function paintSidebar() {
+    for (const el of root.querySelectorAll("[data-progress-flow], #project-progress")) {
+      const project = el.id === "project-progress";
+      const flow = project
+        ? { nodes: config.screens.map((s) => ({ screen: s.id })) }
+        : config.flows.find((f) => f.id === el.dataset.progressFlow);
+      const summary = summarizeFlowProgress(data, flow);
+      el.hidden = !summary.total;
+      if (!summary.total) {
+        el.textContent = "";
+        el.removeAttribute("title");
+        el.removeAttribute("aria-label");
+        continue;
+      }
+      const statuses = Object.entries(progressStatuses)
+        .filter(([key]) => summary.counts[key])
+        .map(([key, label]) => `${summary.counts[key]} ${label.toLowerCase()}`)
+        .join(" · ");
+      const checks = summary.checks;
+      const details = `${summary.verifiedPercent}% verified · ${summary.counts.verified}/${summary.total} screens. ${statuses}${summary.blocked ? ` · ${summary.blocked} blocked` : ""}. ${checks.total ? `Checks ${checks.percent}% · ${checks.done}/${checks.total}` : "No checks recorded"}${checks.unscoped ? ` · ${checks.unscoped} unscoped` : ""}.`;
+      if (project) {
+        el.innerHTML = `<span><b>${summary.verifiedPercent}%</b> verified</span><span><b>${checks.percent ?? "—"}${checks.percent === null ? "" : "%"}</b> checks</span>${summary.blocked ? `<span class="project-blocked"><b>${summary.blocked}</b> blocked</span>` : ""}`;
+      } else el.textContent = `${summary.verifiedPercent}%`;
+      el.title = details;
+      el.setAttribute("aria-label", details);
+      el.dataset.tone = summary.blocked
+        ? "blocked"
+        : summary.verifiedPercent === 100
+          ? "complete"
+          : "pending";
+    }
+  }
   function paint() {
+    paintSidebar();
     for (const el of root.querySelectorAll("[data-progress-screen]"))
       el.innerHTML = badge(record(el.dataset.progressScreen));
     const summary = summarizeProgress(data, config.screens);
@@ -243,6 +282,7 @@ export function mountProgress(root, config, initial, options, selectScreen) {
   return {
     edit,
     paint,
+    paintSidebar,
     open() {
       paint();
       $("progress-screens").showModal();

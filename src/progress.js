@@ -175,3 +175,27 @@ export function summarizeProgress(data, screens) {
   }
   return { total: screens.length, counts, blocked };
 }
+
+/** Delivery counts deduplicate reusable screens, including repeated error variants. */
+export function summarizeFlowProgress(data, flow) {
+  const ids = [...new Set(flow.nodes.filter((n) => n.screen).map((n) => n.screen))];
+  const summary = summarizeProgress(
+    data,
+    ids.map((id) => ({ id })),
+  );
+  let done = 0,
+    total = 0,
+    unscoped = 0;
+  for (const id of ids) {
+    const checks = progressFor(data, id).checks || [];
+    if (!checks.length) unscoped++;
+    total += checks.length;
+    done += checks.filter((check) => check.done).length;
+  }
+  return {
+    ...summary,
+    // Round down so unfinished work can never display as 100%.
+    verifiedPercent: ids.length ? Math.floor((summary.counts.verified * 100) / ids.length) : null,
+    checks: { done, total, unscoped, percent: total ? Math.floor((done * 100) / total) : null },
+  };
+}

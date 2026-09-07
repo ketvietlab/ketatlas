@@ -10,7 +10,7 @@ export function template(config) {
       <button id="map-menu" class="icon-button" aria-label="Choose a flow" aria-expanded="false" aria-controls="map-sidebar"></button>
       <div class="map-brand"><span class="brand-mark">K</span><span><strong>${escapeHTML(config.title)}</strong><small>KetAtlas · Workflow atlas</small></span></div>
       <span id="map-total" class="map-total"></span>
-      <div class="map-header-actions"><button id="open-progress" data-ui="action" data-variant="secondary">Screens</button><button id="map-help" class="icon-button" aria-label="Help"></button></div>
+      <div class="map-header-actions"><div id="project-progress" class="project-progress" role="group" aria-label="Project progress"></div><button id="open-progress" data-ui="action" data-variant="secondary">Screens</button><button id="map-help" class="icon-button" aria-label="Help"></button></div>
     </header>
     <div class="map-layout">
       <aside id="map-sidebar" class="map-sidebar">
