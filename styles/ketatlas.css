@@ -1271,3 +1271,16 @@ a svg {
   background: var(--kv-panel-bg);
   padding-bottom: var(--kv-space-2);
 }
+.progress-check-evidence {
+  display: block;
+}
+.progress-check-evidence summary,
+.progress-evidence summary {
+  cursor: pointer;
+  padding: var(--kv-space-2) 0;
+  font-weight: 600;
+}
+.progress-evidence summary small {
+  color: var(--kv-text-muted);
+  font-weight: 400;
+}
