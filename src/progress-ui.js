@@ -58,15 +58,15 @@ export function mountProgress(root, config, initial, options, selectScreen) {
         .map(([key, label]) => `${summary.counts[key]} ${label.toLowerCase()}`)
         .join(" · ");
       const checks = summary.checks;
-      const details = `${summary.verifiedPercent}% verified · ${summary.counts.verified}/${summary.total} screens. ${statuses}${summary.blocked ? ` · ${summary.blocked} blocked` : ""}. ${checks.total ? `Checks ${checks.percent}% · ${checks.done}/${checks.total}` : "No checks recorded"}${checks.unscoped ? ` · ${checks.unscoped} unscoped` : ""}.`;
+      const details = `${checks.total ? `Checks ${checks.percent}% · ${checks.done}/${checks.total}. ` : "No checks recorded. "}${summary.verifiedPercent}% verified · ${summary.counts.verified}/${summary.total} screens. ${statuses}${summary.blocked ? ` · ${summary.blocked} blocked` : ""}${checks.unscoped ? ` · ${checks.unscoped} unscoped` : ""}.`;
       if (project) {
         el.innerHTML = `<span><b>${summary.verifiedPercent}%</b> verified</span><span><b>${checks.percent ?? "—"}${checks.percent === null ? "" : "%"}</b> checks</span>${summary.blocked ? `<span class="project-blocked"><b>${summary.blocked}</b> blocked</span>` : ""}`;
-      } else el.textContent = `${summary.verifiedPercent}%`;
+      } else el.textContent = checks.percent === null ? "—" : `${checks.percent}%`;
       el.title = details;
       el.setAttribute("aria-label", details);
       el.dataset.tone = summary.blocked
         ? "blocked"
-        : summary.verifiedPercent === 100
+        : (project ? summary.verifiedPercent : checks.percent) === 100
           ? "complete"
           : "pending";
     }

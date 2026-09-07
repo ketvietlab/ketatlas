@@ -57,6 +57,7 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(origin);
   await page.waitForFunction(() => window.atlas);
+  assert.equal(await page.locator('[data-progress-flow="site"]').innerText(), "—");
   await page.getByRole("button", { name: "Screens", exact: true }).click();
   assert.equal(await page.locator("#progress-rows tr").count(), 2);
   await page.locator('[data-progress-edit="domain"]').click();
@@ -105,6 +106,8 @@ try {
       "1 unscoped",
     ),
   );
+  assert.equal(await page.locator('[data-progress-flow="site"]').innerText(), "100%");
+  assert((await page.locator("#project-progress").innerText()).includes("0% verified"));
   const second = await browser.newPage();
   await second.goto(origin);
   await second.waitForFunction(() => window.atlas);
@@ -258,7 +261,10 @@ try {
             },
           ],
         },
-        menu: { status: "planned" },
+        menu: {
+          status: "planned",
+          checks: [{ id: "menu-check", title: "Verify menu", done: false }],
+        },
       },
     }),
   );
@@ -280,6 +286,7 @@ try {
       "50% verified",
     ),
   );
+  assert.equal(await page.locator('[data-progress-flow="publish"]').innerText(), "50%");
   assert(await page.locator('[data-progress-flow="process"]').isHidden());
   assert.equal(await page.locator('[data-progress-flow="site"]').innerText(), "100%");
   assert((await page.locator("#project-progress").innerText()).includes("50% verified"));

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+
+- Show checklist completion in workflow sidebar badges so partial delivery is visible before screen verification. Keep verified-screen completion separate on the top bar; display a dash when no checks are recorded.
+
 ## 0.2.4
 
 - Anchor the progress detail header directly inside the modal top border and scroll only the form beneath it.
