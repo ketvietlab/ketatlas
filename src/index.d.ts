@@ -170,3 +170,12 @@ export function loadAtlas(
   url: string | URL,
   options?: AtlasOptions,
 ): Promise<AtlasInstance>;
+
+/** Unique-screen delivery and recorded-check completion for one workflow; screenless flows return null percentages. */
+export function summarizeFlowProgress(
+  data: AtlasProgress,
+  flow: AtlasFlow,
+): ReturnType<typeof summarizeProgress> & {
+  verifiedPercent: number | null;
+  checks: { done: number; total: number; unscoped: number; percent: number | null };
+};

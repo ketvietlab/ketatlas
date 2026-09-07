@@ -247,3 +247,45 @@ test("read-only server does not expose a write capability", async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("flow percentages deduplicate variants, exclude process nodes and never round unfinished work to 100%", async () => {
+  const { summarizeFlowProgress } = await import("../src/progress.js");
+  const data = {
+    version: 1,
+    screens: {
+      page: { status: "verified", checks: [{ done: true }] },
+      constructor: { status: "in_progress", blocker: "Review", checks: [{ done: false }] },
+    },
+  };
+  const flow = {
+    nodes: [
+      { screen: "page" },
+      { screen: "page" },
+      { screen: "constructor" },
+      { type: "note" },
+      { type: "external" },
+    ],
+  };
+  const s = summarizeFlowProgress(data, flow);
+  assert.equal(s.total, 2);
+  assert.equal(s.verifiedPercent, 50);
+  assert.equal(s.blocked, 1);
+  assert.deepEqual(s.checks, { done: 1, total: 2, unscoped: 0, percent: 50 });
+  assert.equal(summarizeFlowProgress(data, { nodes: [{ screen: "missing" }] }).checks.unscoped, 1);
+  assert.equal(summarizeFlowProgress(data, { nodes: [{ type: "note" }] }).verifiedPercent, null);
+  assert.equal(summarizeFlowProgress(data, { nodes: [] }).checks.percent, null);
+  const many = {
+    version: 1,
+    screens: Object.fromEntries(
+      Array.from({ length: 201 }, (_, i) => [
+        String(i),
+        { status: i < 200 ? "verified" : "planned" },
+      ]),
+    ),
+  };
+  assert.equal(
+    summarizeFlowProgress(many, { nodes: Object.keys(many.screens).map((screen) => ({ screen })) })
+      .verifiedPercent,
+    99,
+  );
+});

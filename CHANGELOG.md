@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Show compact numeric progress badges beside project and workflow titles, with status counts, checklist completion and blockers in tooltips.
+- Deduplicate reused screens and variants, exclude process-only steps, and update the sidebar after saves, refreshes and flow navigation.
+
 ## 0.2.0
 
 - Track delivery per screen in a separate progress JSON, with acceptance checks, blockers, ownership, task references and PR/test/release evidence.

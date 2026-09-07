@@ -1284,3 +1284,42 @@ a svg {
   color: var(--kv-text-muted);
   font-weight: 400;
 }
+
+/* Compact verified-screen badges; detailed counts live in the tooltip. */
+.sidebar-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kv-space-2);
+}
+.flow-link-copy {
+  min-width: 0;
+  flex: 1;
+}
+.flow-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 34px;
+  height: 20px;
+  padding: 0 var(--kv-space-1);
+  border-radius: var(--kv-radius-full);
+  background: var(--kv-surface-hover);
+  color: var(--kv-text-muted);
+  font-size: var(--kv-text-2xs);
+  font-weight: var(--kv-weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+.flow-progress[hidden] {
+  display: none;
+}
+.flow-progress[data-tone="blocked"] {
+  color: var(--kv-warning);
+}
+.flow-progress[data-tone="complete"] {
+  color: var(--kv-positive);
+}

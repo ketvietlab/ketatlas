@@ -14,7 +14,7 @@ export function template(config) {
     </header>
     <div class="map-layout">
       <aside id="map-sidebar" class="map-sidebar">
-        <div class="map-sidebar-heading"><h1>Workflows</h1><p>Choose a flow. Follow the journey.</p></div>
+        <div class="map-sidebar-heading"><div class="sidebar-title"><h1>Workflows</h1><span id="sidebar-progress" class="flow-progress"></span></div><p>Choose a flow. Follow the journey.</p></div>
         <div class="review-search"><input id="flow-search" type="search" aria-label="Search flows and screens" placeholder="Search flows, screens, IDs…"></div>
         <nav id="flow-list" aria-label="Workflows"></nav>
         <div class="map-sidebar-footer"><span class="map-live-dot"></span><p>Real HTML, connected.<br>Double-click a screen to try it.</p></div>

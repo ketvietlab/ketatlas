@@ -70,6 +70,26 @@ try {
     await page.locator('[data-progress-screen="domain"] [data-status="in_progress"]').count(),
     2,
   );
+  assert(
+    (await page.locator('[data-progress-flow="site"]').getAttribute("title")).includes(
+      "0% verified",
+    ),
+  );
+  assert(
+    (await page.locator('[data-progress-flow="site"]').getAttribute("title")).includes(
+      "1 in progress",
+    ),
+  );
+  assert(
+    (await page.locator('[data-progress-flow="site"]').getAttribute("title")).includes(
+      "Checks 100% · 1/1",
+    ),
+  );
+  assert(
+    (await page.locator('[data-progress-flow="publish"]').getAttribute("title")).includes(
+      "1 unscoped",
+    ),
+  );
   const second = await browser.newPage();
   await second.goto(origin);
   await second.waitForFunction(() => window.atlas);
@@ -106,6 +126,9 @@ try {
       .querySelector(".ketatlas")
       .shadowRoot.getElementById("progress-rows")
       .textContent.includes("Reconciled editor"),
+  );
+  assert(
+    (await page.locator('[data-progress-flow="site"]').getAttribute("title")).includes("1 blocked"),
   );
   await page.locator("#progress-blocked").check();
   assert.equal(await page.locator("#progress-rows tr").count(), 1);
@@ -161,6 +184,78 @@ try {
   assert((await page.locator("#progress-rows").innerText()).includes("Reconciled editor"));
   await page.locator('[data-progress-edit="domain"]').click();
   assert.equal(await page.locator("#progress-save").isVisible(), false);
+  atlas.flows[0].nodes.push({ id: "error", screen: "domain", url: "./page.html?error=1" });
+  atlas.flows[0].edges.push({ from: "domain", to: "error", label: "Error state" });
+  atlas.flows.push({
+    id: "process",
+    title: "Release process",
+    nodes: [{ id: "handoff", type: "external", title: "Handoff" }],
+    edges: [],
+  });
+  await writeFile(file, JSON.stringify(atlas));
+  await writeFile(
+    join(dir, "atlas.progress.json"),
+    JSON.stringify({
+      version: 1,
+      screens: {
+        domain: {
+          status: "verified",
+          checks: [
+            { id: "recovery", title: "Recovery checked", done: true, evidenceIds: ["test"] },
+          ],
+          evidence: [
+            {
+              id: "test",
+              kind: "test",
+              title: "Evidence",
+              url: "./page.html",
+              state: "passed",
+              revision: "abc123",
+              environment: "CI",
+            },
+          ],
+        },
+        menu: { status: "planned" },
+      },
+    }),
+  );
+  await page.setViewportSize({ width: 1512, height: 1050 });
+  await page.reload();
+  await page.waitForFunction(() => window.atlas);
+  assert((await page.locator("#sidebar-progress").getAttribute("title")).includes("50% verified"));
+  assert(
+    (await page.locator('[data-progress-flow="site"]').getAttribute("title")).includes(
+      "100% verified",
+    ),
+  );
+  assert(
+    (await page.locator('[data-progress-flow="site"]').getAttribute("title")).includes(
+      "1/1 screens",
+    ),
+  );
+  assert(
+    (await page.locator('[data-progress-flow="publish"]').getAttribute("title")).includes(
+      "50% verified",
+    ),
+  );
+  assert(await page.locator('[data-progress-flow="process"]').isHidden());
+  assert.equal(await page.locator('[data-progress-flow="site"]').innerText(), "100%");
+  assert.equal(await page.locator("#sidebar-progress").innerText(), "50%");
+  await page.getByRole("searchbox", { name: "Search flows and screens" }).fill("publish");
+  await page.locator('[data-flow="publish"]').click();
+  assert(
+    (await page.locator('[data-progress-flow="publish"]').getAttribute("title")).includes(
+      "50% verified",
+    ),
+  );
+  await page.getByRole("searchbox", { name: "Search flows and screens" }).fill("");
+  await page.screenshot({ path: "artifacts/sidebar-progress.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Choose a flow", exact: true }).click();
+  assert(await page.locator('[data-progress-flow="site"]').isVisible());
+  const badgeBox = await page.locator('[data-progress-flow="site"]').boundingBox();
+  assert(badgeBox.height <= 22 && badgeBox.width <= 44, "Numeric badge stays compact");
+  await page.screenshot({ path: "artifacts/sidebar-progress-mobile.png" });
   assert.deepEqual(errors, []);
   console.log(
     "PASS progress: unique screens, edit/evidence/checklist, save/reload, shared nodes, filters, stale writes, verification refusal, mobile and read-only",
