@@ -2,7 +2,7 @@
 
 ## 0.2.1
 
-- Show compact numeric progress badges beside the project heading and workflow step counts, with status counts, checklist completion and blockers in tooltips.
+- Show compact numeric progress badges after workflow step counts, with status counts, checklist completion and blockers in tooltips.
 - Deduplicate reused screens and variants, exclude process-only steps, and update the sidebar after saves, refreshes and flow navigation.
 
 ## 0.2.0

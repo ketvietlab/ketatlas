@@ -39,11 +39,8 @@ export function mountProgress(root, config, initial, options, selectScreen) {
     `<span class="progress-badge" data-status="${e(r.status)}">${e(progressStatuses[r.status])}</span>${r.blocker?.trim() ? '<span class="progress-blocked">Blocked</span>' : ""}`;
   const record = (id) => progressFor(data, id);
   function paintSidebar() {
-    for (const el of root.querySelectorAll("[data-progress-flow], #sidebar-progress")) {
-      const flow =
-        el.id === "sidebar-progress"
-          ? { nodes: config.screens.map((s) => ({ screen: s.id })) }
-          : config.flows.find((f) => f.id === el.dataset.progressFlow);
+    for (const el of root.querySelectorAll("[data-progress-flow]")) {
+      const flow = config.flows.find((f) => f.id === el.dataset.progressFlow);
       const summary = summarizeFlowProgress(data, flow);
       el.hidden = !summary.total;
       if (!summary.total) {
