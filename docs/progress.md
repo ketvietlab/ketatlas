@@ -4,7 +4,7 @@ Open **Screens** to review delivery across the project. Counts use unique screen
 
 ## Sidebar completion
 
-The sidebar shows one compact numeric badge beside the project heading and each workflow title. **Verified %** is the number of Verified screens divided by the total unique screens in that scope. Repeated nodes and error variants count once; note/external nodes do not count. Screenless flows have no badge. Percentages round down so unfinished work cannot appear as 100%.
+The sidebar shows one compact numeric badge beside the project heading and after each workflow’s step count. **Verified %** is the number of Verified screens divided by the total unique screens in that scope. Repeated nodes and error variants count once; note/external nodes do not count. Screenless flows have no badge. Percentages round down so unfinished work cannot appear as 100%.
 
 The badge tooltip and accessible label include status counts, blockers and **Checks %**, which counts completed recorded acceptance checks over all recorded checks, with an explicit unscoped-screen count when checklists are missing. This is not an estimate of effort, and 100% of a partial checklist does not make a screen Verified. Saving or refreshing progress updates the sidebar; changing or searching workflows preserves the current progress.
 

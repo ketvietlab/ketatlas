@@ -136,7 +136,7 @@ export function createAtlas(container, input, options = {}) {
               ).includes(q),
           );
           return matches.length
-            ? `<section><h2 class="flow-group-title">${e(group)}</h2>${matches.map((f) => `<button class="flow-link ${f === current ? "active" : ""}" data-flow="${f.id}" ${f === current ? 'aria-current="true"' : ""}><span class="flow-number">${String(f.index + 1).padStart(2, "0")}</span><span class="flow-link-copy"><strong>${e(f.title)}</strong><small>${f.nodes.length} steps${f.edges.some((a) => a.kind === "recovery") ? " · Recovery branch" : ""}</small></span><span class="flow-progress" data-progress-flow="${f.id}"></span></button>`).join("")}</section>`
+            ? `<section><h2 class="flow-group-title">${e(group)}</h2>${matches.map((f) => `<button class="flow-link ${f === current ? "active" : ""}" data-flow="${f.id}" ${f === current ? 'aria-current="true"' : ""}><span class="flow-number">${String(f.index + 1).padStart(2, "0")}</span><span class="flow-link-copy"><strong>${e(f.title)}</strong><small>${f.nodes.length} steps <span class="flow-progress" data-progress-flow="${f.id}"></span>${f.edges.some((a) => a.kind === "recovery") ? " · Recovery branch" : ""}</small></span></button>`).join("")}</section>`
             : "";
         })
         .join("") || '<p class="mock-filter-empty">No matching workflows.</p>';

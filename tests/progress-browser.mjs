@@ -253,6 +253,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Choose a flow", exact: true }).click();
   assert(await page.locator('[data-progress-flow="site"]').isVisible());
+  assert.equal(await page.locator('[data-flow="site"] small .flow-progress').innerText(), "100%");
   const badgeBox = await page.locator('[data-progress-flow="site"]').boundingBox();
   assert(badgeBox.height <= 22 && badgeBox.width <= 44, "Numeric badge stays compact");
   await page.screenshot({ path: "artifacts/sidebar-progress-mobile.png" });

@@ -1313,6 +1313,7 @@ a svg {
   line-height: 1;
   letter-spacing: normal;
   white-space: nowrap;
+  vertical-align: middle;
 }
 .flow-progress[hidden] {
   display: none;
