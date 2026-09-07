@@ -306,6 +306,17 @@ try {
   const footerBox = await page.locator("#screen-dialog footer").boundingBox();
   assert(footerBox.y >= 0 && footerBox.y + footerBox.height <= 844);
   assert(footerBox.x >= 0 && footerBox.x + footerBox.width <= 391);
+  const beforeFooter = await page.locator("#screen-dialog footer").boundingBox();
+  await page.locator(".preview-scroll").evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  const afterFooter = await page.locator("#screen-dialog footer").boundingBox();
+  assert.equal(afterFooter.y, beforeFooter.y, "Footer stays fixed while content scrolls");
+  assert.equal(afterFooter.height, beforeFooter.height);
+  assert(await page.locator(".preview-scroll").evaluate((el) => el.scrollTop > 0));
+  assert.equal(await page.locator("#screen-dialog").evaluate((el) => el.scrollTop), 0);
+  const dialogBox = await page.locator("#screen-dialog").boundingBox();
+  assert(Math.abs(afterFooter.y + afterFooter.height - dialogBox.y - dialogBox.height) <= 1);
   await page.screenshot({ path: "artifacts/preview-progress-mobile.png" });
   await page.locator("#dialog-progress-details").click();
   assert.equal(await page.locator("#progress-save").isVisible(), false);
