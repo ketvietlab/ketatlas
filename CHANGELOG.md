@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- Keep preview headers and progress footers outside the scrolling content so the footer remains fixed to the frame bottom.
+
 ## 0.2.2
 
 - Show screen status, blockers, linked PR states and scoped state checks in preview footers, with direct access to progress details.

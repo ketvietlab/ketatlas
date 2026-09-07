@@ -1358,11 +1358,9 @@ a svg {
   }
 }
 
-/* Keep delivery context visible while scrolling a full-size screen preview. */
+/* Only preview content scrolls; the footer remains outside the scrolling region. */
 .screen-dialog footer {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
+  flex: none;
   background: var(--kv-panel-bg);
   flex-wrap: wrap;
   max-height: 40dvh;
@@ -1405,4 +1403,19 @@ a svg {
 }
 .preview-actions [data-ui] {
   font-size: var(--kv-text-xs);
+}
+
+.screen-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.screen-dialog > header {
+  flex: none;
+  position: static;
+}
+.preview-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
