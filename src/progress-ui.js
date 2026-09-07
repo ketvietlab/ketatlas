@@ -20,7 +20,8 @@ export function mountProgress(root, config, initial, options, selectScreen) {
     editing,
     draft,
     baseline,
-    saving = false;
+    saving = false,
+    preview;
   const $ = (id) => root.getElementById(id);
   const container = document.createElement("div");
   container.innerHTML = `
@@ -70,8 +71,29 @@ export function mountProgress(root, config, initial, options, selectScreen) {
           : "pending";
     }
   }
+  function paintPreview() {
+    if (!preview) return;
+    const r = record(preview.screenId);
+    const checks = (r.checks || []).filter((c) =>
+      c.nodes?.some((n) => n.flowId === preview.flowId && n.nodeId === preview.nodeId),
+    );
+    const prs = (r.evidence || [])
+      .filter((ev) => ev.kind === "pr")
+      .map((ev) => {
+        const url = safeURL(ev.url, options.baseURL || document.baseURI);
+        const parts = new URL(url, document.baseURI).pathname.match(/\/([^/]+)\/pull\/(\d+)\/?$/);
+        const title = parts ? `${parts[1]}#${parts[2]}` : ev.title;
+        return `<a href="${e(url)}" target="_blank" rel="noopener noreferrer" title="${e(ev.title)}">${e(title)}${ev.state ? ` <span>· ${e(ev.state)}</span>` : ""} ↗</a>`;
+      });
+    $("dialog-progress").innerHTML =
+      `<div class="preview-status"><span>Screen status</span>${badge(r)}${checks.length ? `<span>State checks: ${checks.filter((c) => c.done).length}/${checks.length}</span>` : ""}</div>${r.blocker?.trim() ? `<p class="preview-blocker">${e(r.blocker)}</p>` : ""}<div class="preview-prs" aria-label="Screen pull requests">${prs.length ? prs.join("") : "<span>No linked PRs</span>"}</div>`;
+  }
+  $("dialog-progress-details").onclick = () => {
+    if (preview) edit(preview.screenId);
+  };
   function paint() {
     paintSidebar();
+    paintPreview();
     for (const el of root.querySelectorAll("[data-progress-screen]"))
       el.innerHTML = badge(record(el.dataset.progressScreen));
     const summary = summarizeProgress(data, config.screens);
@@ -274,7 +296,7 @@ export function mountProgress(root, config, initial, options, selectScreen) {
       $("progress-error").textContent = err.message;
       $("progress-reload-latest").hidden = !options.reloadProgress;
     } finally {
-      saving = false;
+      ((saving = false), preview);
       $("progress-save").disabled = false;
     }
   };
@@ -283,6 +305,10 @@ export function mountProgress(root, config, initial, options, selectScreen) {
     edit,
     paint,
     paintSidebar,
+    preview(screenId, flowId, nodeId) {
+      preview = { screenId, flowId, nodeId };
+      paintPreview();
+    },
     open() {
       paint();
       $("progress-screens").showModal();

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Show screen status, blockers, linked PR states and scoped state checks in preview footers, with direct access to progress details.
+- Keep the footer visible when scrolling, refresh it after edits, and support read-only previews.
+
 ## 0.2.1
 
 - Show compact numeric progress badges after workflow step counts, with status counts, checklist completion and blockers in tooltips.
