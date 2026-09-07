@@ -379,6 +379,7 @@ export function createAtlas(container, input, options = {}) {
       return;
     }
     previewNode = n;
+    progressUI.preview(n.screenId, n.flowId, n.id);
     $("dialog-screen-id").textContent = n.screenId;
     $("dialog-title").textContent = n.title;
     $("dialog-open").href = n.url;

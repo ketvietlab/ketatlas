@@ -149,6 +149,20 @@ try {
   assert.equal((await page.evaluate(() => window.atlas.getState())).selectedNodeId, "domain");
   await page.getByRole("button", { name: "Screen progress", exact: true }).click();
   await page.locator("[data-close-editor]").click();
+  await page.evaluate(() => window.atlas.openNode("site", "domain"));
+  assert.equal(await page.locator('#dialog-progress [data-status="in_progress"]').count(), 1);
+  assert((await page.locator("#dialog-progress").innerText()).includes("Blocked"));
+  const previewPR = page.locator("#dialog-progress a");
+  assert.equal(await previewPR.getAttribute("href"), "https://example.test/pull/12");
+  assert((await previewPR.innerText()).includes("merged"));
+  assert.equal(await previewPR.getAttribute("rel"), "noopener noreferrer");
+  await page.locator("#dialog-progress-details").click();
+  await page.locator('[data-record="status"]').selectOption("in_review");
+  await page.getByRole("button", { name: "Save progress", exact: true }).click();
+  await page.locator('#dialog-progress [data-status="in_review"]').waitFor();
+  assert(await page.locator("#screen-dialog").evaluate((el) => el.open));
+  await page.screenshot({ path: "artifacts/preview-progress.png" });
+  await page.locator("#close-screen").click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Screens", exact: true }).click();
   await page.screenshot({ path: "artifacts/progress-mobile.png" });
@@ -201,9 +215,22 @@ try {
         domain: {
           status: "verified",
           checks: [
-            { id: "recovery", title: "Recovery checked", done: true, evidenceIds: ["test"] },
+            {
+              id: "recovery",
+              title: "Recovery checked",
+              done: true,
+              evidenceIds: ["test"],
+              nodes: [{ flowId: "site", nodeId: "error" }],
+            },
           ],
           evidence: [
+            {
+              id: "pr",
+              kind: "pr",
+              title: '<img src=x onerror="throw Error(1)"> Fix state',
+              url: "https://example.test/repository/pull/42",
+              state: "merged",
+            },
             {
               id: "test",
               kind: "test",
@@ -270,6 +297,25 @@ try {
   const badgeBox = await page.locator('[data-progress-flow="site"]').boundingBox();
   assert(badgeBox.height <= 22 && badgeBox.width <= 44, "Numeric badge stays compact");
   await page.screenshot({ path: "artifacts/sidebar-progress-mobile.png" });
+  await page.evaluate(() => window.atlas.openNode("site", "error"));
+  assert((await page.locator("#dialog-preview iframe").getAttribute("src")).includes("?error=1"));
+  assert.equal(await page.locator('#dialog-progress [data-status="verified"]').count(), 1);
+  assert((await page.locator("#dialog-progress").innerText()).includes("State checks: 1/1"));
+  assert((await page.locator("#dialog-progress a").innerText()).includes("repository#42"));
+  assert.equal(await page.locator("#dialog-progress img").count(), 0);
+  const footerBox = await page.locator("#screen-dialog footer").boundingBox();
+  assert(footerBox.y >= 0 && footerBox.y + footerBox.height <= 844);
+  assert(footerBox.x >= 0 && footerBox.x + footerBox.width <= 391);
+  await page.screenshot({ path: "artifacts/preview-progress-mobile.png" });
+  await page.locator("#dialog-progress-details").click();
+  assert.equal(await page.locator("#progress-save").isVisible(), false);
+  await page.locator("[data-close-editor]").click();
+  await page.locator("#close-screen").click();
+  await page.evaluate(() => window.atlas.openNode("publish", "menu"));
+  assert((await page.locator("#dialog-progress").innerText()).includes("No linked PRs"));
+  assert.equal(await page.locator("#dialog-progress a").count(), 0);
+  assert(!(await page.locator("#dialog-progress").innerText()).includes("State checks"));
+  await page.locator("#close-screen").click();
   assert.deepEqual(errors, []);
   console.log(
     "PASS progress: unique screens, edit/evidence/checklist, save/reload, shared nodes, filters, stale writes, verification refusal, mobile and read-only",
