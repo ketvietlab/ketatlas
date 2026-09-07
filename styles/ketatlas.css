@@ -1440,3 +1440,13 @@ a svg {
     --progress-dialog-padding: var(--kv-space-3);
   }
 }
+
+.flow-progress-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kv-space-1);
+  vertical-align: middle;
+}
+.flow-progress-group[hidden] {
+  display: none;
+}

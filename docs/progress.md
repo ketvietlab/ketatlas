@@ -6,9 +6,9 @@ Screen and state preview footers show the shared screen status, blockers and lin
 
 ## Sidebar and project completion
 
-Project-wide verified/checklist percentages and blocker counts appear in the top bar beside **Screens**. The sidebar shows one compact numeric badge after each workflow’s step count (`2 steps [30%]`). **Verified %** is the number of Verified screens divided by the total unique screens in that scope. Repeated nodes and error variants count once; note/external nodes do not count. Screenless flows have no badge. Percentages round down so unfinished work cannot appear as 100%.
+Project-wide verified/checklist percentages and blocker counts appear in the top bar beside **Screens**. The sidebar shows two badges after each workflow’s step count: **Checks %** (completed recorded acceptance checks / all recorded checks for unique screens) and **Implemented %** (screens with Implemented or Verified status / all unique screens). The compact labels are `30% checks` and `20% impl.`; tooltips spell out the definitions. In progress and In review screens do not count as implemented. Repeated nodes and error variants count once; note/external nodes do not count. Screenless flows have no badge. Flows with no recorded checks show **—**, not a measured 0%. Percentages round down so unfinished checks cannot appear as 100%.
 
-The badge tooltip and accessible label include status counts, blockers and **Checks %**, which counts completed recorded acceptance checks over all recorded checks, with an explicit unscoped-screen count when checklists are missing. This is not an estimate of effort, and 100% of a partial checklist does not make a screen Verified. Saving or refreshing progress updates the sidebar; changing or searching workflows preserves the current progress.
+The badge tooltip and accessible label include completed/total checks, status counts, blockers, verified-screen completion, and unscoped-screen counts when checklists are missing. Checklist completion is not an estimate of effort or verified screen completion: 100% of a partial checklist does not make a screen Verified. Verified % on the top bar remains the number of Verified screens divided by all unique project screens. Saving or refreshing progress updates the sidebar; changing or searching workflows preserves the current progress.
 
 ## Status and scope
 
@@ -71,11 +71,11 @@ Evidence kinds are `pr`, `test`, `release`, `reference`. Required fields: `id`, 
 ## Editing locally and from agents
 
 ```sh
-npx --yes ketatlas@0.2.4 serve atlas.json
-npx --yes ketatlas@0.2.4 serve atlas.json --read-only
-npx --yes ketatlas@0.2.4 progress atlas.json --init
-npx --yes ketatlas@0.2.4 progress atlas.json --json
-npx --yes ketatlas@0.2.4 progress atlas.json --set sign-in --record record.json --expect REVISION_FROM_READ
+npx --yes ketatlas@0.2.5 serve atlas.json
+npx --yes ketatlas@0.2.5 serve atlas.json --read-only
+npx --yes ketatlas@0.2.5 progress atlas.json --init
+npx --yes ketatlas@0.2.5 progress atlas.json --json
+npx --yes ketatlas@0.2.5 progress atlas.json --set sign-in --record record.json --expect REVISION_FROM_READ
 ```
 
 `--init` explicitly creates Unassessed records and refuses an existing progress file. `--set` replaces one complete screen record; preserve existing checklist IDs, evidence and state references. Read the revision with `--json` first. Do not retry a stale revision by blindly substituting a new one: reload and reconcile changes. `updatedAt` is stamped on successful record writes.

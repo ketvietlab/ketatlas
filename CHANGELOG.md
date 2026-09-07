@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+
+- Show separate Checks and Implemented percentage badges per workflow. Implemented includes Verified screens; project verification remains separate on the top bar. Display a dash for Checks when no checklist is recorded.
+
 ## 0.2.4
 
 - Anchor the progress detail header directly inside the modal top border and scroll only the form beneath it.

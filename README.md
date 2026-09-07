@@ -17,15 +17,15 @@ https://github.com/user-attachments/assets/13f24fc8-7b8e-4bda-9e02-364c120ee163
 [KetAtlas is available on npm](https://www.npmjs.com/package/ketatlas). Use Node.js 22+ and run it from any directory:
 
 ```sh
-npx --yes ketatlas@0.2.4 scaffold my-atlas --template web
-npx --yes ketatlas@0.2.4 serve my-atlas/atlas.json
-npx --yes ketatlas@0.2.4 audit my-atlas/atlas.json --strict
+npx --yes ketatlas@0.2.5 scaffold my-atlas --template web
+npx --yes ketatlas@0.2.5 serve my-atlas/atlas.json
+npx --yes ketatlas@0.2.5 audit my-atlas/atlas.json --strict
 ```
 
 Or install the CLI once for your user account:
 
 ```sh
-npm install --global ketatlas@0.2.4
+npm install --global ketatlas@0.2.5
 ketatlas scaffold my-atlas
 ketatlas serve my-atlas/atlas.json
 ketatlas audit my-atlas/atlas.json --strict

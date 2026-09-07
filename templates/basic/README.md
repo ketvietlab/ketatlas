@@ -7,7 +7,7 @@ npx ketatlas serve atlas.json
 npx ketatlas audit atlas.json --strict
 ```
 
-Edit `atlas.json` to change nodes, edges, and screen URLs. Screen URLs are relative to that file. Refresh the browser after editing. No wrapper HTML, package manifest, lockfile, node_modules, or build step is needed. Alternatively, install the CLI once with npm install --global ketatlas@0.2.4 and use ketatlas serve atlas.json.
+Edit `atlas.json` to change nodes, edges, and screen URLs. Screen URLs are relative to that file. Refresh the browser after editing. No wrapper HTML, package manifest, lockfile, node_modules, or build step is needed. Alternatively, install the CLI once with npm install --global ketatlas@0.2.5 and use ketatlas serve atlas.json.
 
 Edit the HTML files in screens/ to replace the sample product. styles/design-system.css is generated from the pinned KetJS design system; do not manually fork its tokens.
 
