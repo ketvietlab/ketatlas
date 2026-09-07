@@ -27,6 +27,21 @@ const atlas = {
     },
   ],
 };
+async function assertEditorHeaderFixed(page) {
+  const header = page.locator("#progress-editor > .progress-header");
+  const before = await header.boundingBox();
+  const modal = await page.locator("#progress-editor").boundingBox();
+  assert(Math.abs(before.y - modal.y - 1) <= 1, "Header sits against the modal top border");
+  await page.locator("#progress-form").evaluate((el) => (el.scrollTop = el.scrollHeight));
+  const after = await header.boundingBox();
+  assert.equal(after.y, before.y, "Form scrolling cannot move the header");
+  assert.equal(await page.locator("#progress-editor").evaluate((el) => el.scrollTop), 0);
+  assert(await page.locator("#progress-form").evaluate((el) => el.scrollTop > 0));
+  const form = await page.locator("#progress-form").boundingBox();
+  assert(form.y >= after.y + after.height - 1, "Form stays below the header");
+  await page.screenshot({ path: `artifacts/progress-header-${page.viewportSize().width}.png` });
+  await page.locator("#progress-form").evaluate((el) => (el.scrollTop = 0));
+}
 let server, readonly, staticServer, browser;
 const errors = [];
 try {
@@ -157,6 +172,7 @@ try {
   assert((await previewPR.innerText()).includes("merged"));
   assert.equal(await previewPR.getAttribute("rel"), "noopener noreferrer");
   await page.locator("#dialog-progress-details").click();
+  await assertEditorHeaderFixed(page);
   await page.locator('[data-record="status"]').selectOption("in_review");
   await page.getByRole("button", { name: "Save progress", exact: true }).click();
   await page.locator('#dialog-progress [data-status="in_review"]').waitFor();
@@ -319,6 +335,7 @@ try {
   assert(Math.abs(afterFooter.y + afterFooter.height - dialogBox.y - dialogBox.height) <= 1);
   await page.screenshot({ path: "artifacts/preview-progress-mobile.png" });
   await page.locator("#dialog-progress-details").click();
+  await assertEditorHeaderFixed(page);
   assert.equal(await page.locator("#progress-save").isVisible(), false);
   await page.locator("[data-close-editor]").click();
   await page.locator("#close-screen").click();

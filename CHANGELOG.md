@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+- Anchor the progress detail header directly inside the modal top border and scroll only the form beneath it.
+
 ## 0.2.3
 
 - Keep preview headers and progress footers outside the scrolling content so the footer remains fixed to the frame bottom.
