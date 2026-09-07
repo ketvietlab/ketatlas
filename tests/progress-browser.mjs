@@ -239,6 +239,12 @@ try {
   );
   assert(await page.locator('[data-progress-flow="process"]').isHidden());
   assert.equal(await page.locator('[data-progress-flow="site"]').innerText(), "100%");
+  assert((await page.locator("#project-progress").innerText()).includes("50% verified"));
+  assert((await page.locator("#project-progress").getAttribute("title")).includes("1/2 screens"));
+  assert.equal(
+    await page.locator(".map-header-actions #project-progress + #open-progress").count(),
+    1,
+  );
   await page.getByRole("searchbox", { name: "Search flows and screens" }).fill("publish");
   await page.locator('[data-flow="publish"]').click();
   assert(
@@ -254,6 +260,13 @@ try {
   assert.equal(await page.locator('[data-flow="site"] small .flow-progress').innerText(), "100%");
   assert.equal((await page.locator('[data-flow="site"] small').innerText()).trim(), "2 steps 100%");
   assert.equal(await page.locator(".flow-progress-track, #sidebar-progress").count(), 0);
+  assert(await page.locator("#project-progress").isVisible());
+  const headerBox = await page.locator(".map-header").boundingBox();
+  const actionsBox = await page.locator(".map-header-actions").boundingBox();
+  assert(
+    actionsBox.x >= headerBox.x &&
+      actionsBox.x + actionsBox.width <= headerBox.x + headerBox.width + 1,
+  );
   const badgeBox = await page.locator('[data-progress-flow="site"]').boundingBox();
   assert(badgeBox.height <= 22 && badgeBox.width <= 44, "Numeric badge stays compact");
   await page.screenshot({ path: "artifacts/sidebar-progress-mobile.png" });

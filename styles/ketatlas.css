@@ -1318,3 +1318,42 @@ a svg {
 .flow-progress[data-tone="complete"] {
   color: var(--kv-positive);
 }
+
+.project-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--kv-space-3);
+  margin-right: var(--kv-space-2);
+  color: var(--kv-text-muted);
+  font-size: var(--kv-text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.project-progress[hidden] {
+  display: none;
+}
+.project-progress b {
+  color: var(--kv-text-main);
+  font-weight: var(--kv-weight-semibold);
+}
+.project-progress .project-blocked,
+.project-progress .project-blocked b {
+  color: var(--kv-warning);
+}
+@container (max-width: 1000px) {
+  .map-header {
+    height: auto;
+    min-height: 72px;
+    flex-wrap: wrap;
+    gap: var(--kv-space-2);
+  }
+  .map-header-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+  .project-progress {
+    margin-right: auto;
+    gap: var(--kv-space-2);
+    font-size: var(--kv-text-2xs);
+  }
+}

@@ -3,6 +3,7 @@
 ## 0.2.1
 
 - Show compact numeric progress badges after workflow step counts, with status counts, checklist completion and blockers in tooltips.
+- Place project-wide verified/checklist percentages and blockers next to Screens in the top bar.
 - Deduplicate reused screens and variants, exclude process-only steps, and update the sidebar after saves, refreshes and flow navigation.
 
 ## 0.2.0
