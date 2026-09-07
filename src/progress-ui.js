@@ -58,10 +58,30 @@ export function mountProgress(root, config, initial, options, selectScreen) {
         .map(([key, label]) => `${summary.counts[key]} ${label.toLowerCase()}`)
         .join(" · ");
       const checks = summary.checks;
+      const implemented = summary.counts.implemented + summary.counts.verified;
+      const implementedPercent = Math.floor((implemented / summary.total) * 100);
       const details = `${checks.total ? `Checks ${checks.percent}% · ${checks.done}/${checks.total}. ` : "No checks recorded. "}${summary.verifiedPercent}% verified · ${summary.counts.verified}/${summary.total} screens. ${statuses}${summary.blocked ? ` · ${summary.blocked} blocked` : ""}${checks.unscoped ? ` · ${checks.unscoped} unscoped` : ""}.`;
       if (project) {
         el.innerHTML = `<span><b>${summary.verifiedPercent}%</b> verified</span><span><b>${checks.percent ?? "—"}${checks.percent === null ? "" : "%"}</b> checks</span>${summary.blocked ? `<span class="project-blocked"><b>${summary.blocked}</b> blocked</span>` : ""}`;
-      } else el.textContent = checks.percent === null ? "—" : `${checks.percent}%`;
+      } else {
+        const metric = (name, label, percent, description) =>
+          `<span class="flow-progress" data-metric="${name}" data-tone="${summary.blocked ? "blocked" : percent === 100 ? "complete" : "pending"}" title="${e(description)}" aria-label="${e(description)}">${percent === null ? "—" : `${percent}%`} ${label}</span>`;
+        el.innerHTML =
+          metric(
+            "checks",
+            "checks",
+            checks.percent,
+            checks.total
+              ? `Checks ${checks.percent}%: ${checks.done}/${checks.total} recorded checks completed`
+              : "Checks: no recorded checklist",
+          ) +
+          metric(
+            "implemented",
+            "impl.",
+            implementedPercent,
+            `Implemented ${implementedPercent}%: ${implemented}/${summary.total} screens have Implemented or Verified status`,
+          );
+      }
       el.title = details;
       el.setAttribute("aria-label", details);
       el.dataset.tone = summary.blocked

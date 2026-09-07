@@ -2,7 +2,7 @@
 
 ## 0.2.5
 
-- Show checklist completion in workflow sidebar badges so partial delivery is visible before screen verification. Keep verified-screen completion separate on the top bar; display a dash when no checks are recorded.
+- Show separate Checks and Implemented percentage badges per workflow. Implemented includes Verified screens; project verification remains separate on the top bar. Display a dash for Checks when no checklist is recorded.
 
 ## 0.2.4
 

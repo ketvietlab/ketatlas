@@ -57,7 +57,10 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(origin);
   await page.waitForFunction(() => window.atlas);
-  assert.equal(await page.locator('[data-progress-flow="site"]').innerText(), "—");
+  assert.equal(
+    await page.locator('[data-progress-flow="site"] [data-metric="checks"]').innerText(),
+    "— checks",
+  );
   await page.getByRole("button", { name: "Screens", exact: true }).click();
   assert.equal(await page.locator("#progress-rows tr").count(), 2);
   await page.locator('[data-progress-edit="domain"]').click();
@@ -106,8 +109,15 @@ try {
       "1 unscoped",
     ),
   );
-  assert.equal(await page.locator('[data-progress-flow="site"]').innerText(), "100%");
+  assert.equal(
+    await page.locator('[data-progress-flow="site"] [data-metric="checks"]').innerText(),
+    "100% checks",
+  );
   assert((await page.locator("#project-progress").innerText()).includes("0% verified"));
+  assert.equal(
+    await page.locator('[data-progress-flow="site"] [data-metric="implemented"]').innerText(),
+    "0% impl.",
+  );
   const second = await browser.newPage();
   await second.goto(origin);
   await second.waitForFunction(() => window.atlas);
@@ -262,7 +272,7 @@ try {
           ],
         },
         menu: {
-          status: "planned",
+          status: "implemented",
           checks: [{ id: "menu-check", title: "Verify menu", done: false }],
         },
       },
@@ -286,9 +296,23 @@ try {
       "50% verified",
     ),
   );
-  assert.equal(await page.locator('[data-progress-flow="publish"]').innerText(), "50%");
+  assert.equal(
+    await page.locator('[data-progress-flow="publish"] [data-metric="checks"]').innerText(),
+    "50% checks",
+  );
+  assert.equal(
+    await page.locator('[data-progress-flow="publish"] [data-metric="implemented"]').innerText(),
+    "100% impl.",
+  );
+  assert.equal(
+    await page.locator('[data-progress-flow="site"] [data-metric="implemented"]').innerText(),
+    "100% impl.",
+  );
   assert(await page.locator('[data-progress-flow="process"]').isHidden());
-  assert.equal(await page.locator('[data-progress-flow="site"]').innerText(), "100%");
+  assert.equal(
+    await page.locator('[data-progress-flow="site"] [data-metric="checks"]').innerText(),
+    "100% checks",
+  );
   assert((await page.locator("#project-progress").innerText()).includes("50% verified"));
   assert((await page.locator("#project-progress").getAttribute("title")).includes("1/2 screens"));
   assert.equal(
@@ -307,8 +331,11 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Choose a flow", exact: true }).click();
   assert(await page.locator('[data-progress-flow="site"]').isVisible());
-  assert.equal(await page.locator('[data-flow="site"] small .flow-progress').innerText(), "100%");
-  assert.equal((await page.locator('[data-flow="site"] small').innerText()).trim(), "2 steps 100%");
+  assert.deepEqual(
+    await page.locator('[data-flow="site"] small .flow-progress').allTextContents(),
+    ["100% checks", "100% impl."],
+  );
+  assert((await page.locator('[data-flow="site"] small').innerText()).startsWith("2 steps"));
   assert.equal(await page.locator(".flow-progress-track, #sidebar-progress").count(), 0);
   assert(await page.locator("#project-progress").isVisible());
   const headerBox = await page.locator(".map-header").boundingBox();
@@ -318,7 +345,7 @@ try {
       actionsBox.x + actionsBox.width <= headerBox.x + headerBox.width + 1,
   );
   const badgeBox = await page.locator('[data-progress-flow="site"]').boundingBox();
-  assert(badgeBox.height <= 22 && badgeBox.width <= 44, "Numeric badge stays compact");
+  assert(badgeBox.height <= 22 && badgeBox.width <= 165, "Numeric badge stays compact");
   await page.screenshot({ path: "artifacts/sidebar-progress-mobile.png" });
   await page.evaluate(() => window.atlas.openNode("site", "error"));
   assert((await page.locator("#dialog-preview iframe").getAttribute("src")).includes("?error=1"));
