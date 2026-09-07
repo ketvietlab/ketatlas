@@ -1,6 +1,6 @@
 {
   "name": "ketatlas",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Interactive HTML maps for screens, workflows, and user journeys.",
   "type": "module",
   "license": "MIT",
@@ -18,7 +18,8 @@
       "types": "./src/index.d.ts",
       "import": "./src/index.js"
     },
-    "./schema.json": "./schema.json"
+    "./schema.json": "./schema.json",
+    "./progress.schema.json": "./progress.schema.json"
   },
   "bin": {
     "ketatlas": "bin/ketatlas.js"
@@ -35,19 +36,20 @@
     "templates",
     "skills",
     "docs",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "progress.schema.json"
   ],
   "scripts": {
     "dev": "node bin/ketatlas.js serve examples/atlas.json --root . --port 4178",
     "validate": "node bin/ketatlas.js audit examples/atlas.json --root . && node bin/ketatlas.js audit templates/basic/atlas.json && node bin/ketatlas.js audit templates/web/atlas.json && node bin/ketatlas.js audit templates/process/atlas.json",
     "test": "node --test tests/*.test.js",
-    "test:e2e": "node tests/browser.mjs",
+    "test:e2e": "node tests/browser.mjs && node tests/progress-browser.mjs",
     "check": "npm run validate && npm test && npm run test:e2e",
     "format": "prettier --write src styles/ketatlas.css bin scripts docs examples starter templates skills tests '*.md' '*.json' .github/workflows",
     "format:check": "prettier --check src styles/ketatlas.css bin scripts docs examples starter templates skills tests '*.md' '*.json' .github/workflows",
     "prepare:assets": "node scripts/prepare-assets.mjs",
     "prepack": "node scripts/verify-assets.mjs",
-    "prepare:templates": "node scripts/schema.mjs && node scripts/prepare-templates.mjs",
+    "prepare:templates": "node scripts/schema.mjs && node scripts/progress-schema.mjs && node scripts/prepare-templates.mjs",
     "test:package": "node tests/package.mjs"
   },
   "devDependencies": {

@@ -106,3 +106,7 @@ Iframe previews are sandboxed. Scripts and forms work by default, but the page h
 Remote pages can reject framing using CSP or `X-Frame-Options`. KetAtlas cannot override that. Use a permitted embedded route or the **Open in new tab** action. Test links/forms with the default sandbox before sharing a project.
 
 The viewer uses native dialog, Shadow DOM, ResizeObserver, container queries and modern CSS. Chromium is covered by the browser suite. Other modern engines should be qualified against your host application before promising support.
+
+## Progress adapters
+
+`createAtlas` accepts `options.progress`. `loadAtlas` discovers a sibling progress JSON or accepts `progressURL`. Both support `progressRevision`, `saveProgress(screenId, record, revision)` and `reloadProgress()`; adapters return `{data, revision}`. No save adapter means read-only. See [Screen progress](progress.md).

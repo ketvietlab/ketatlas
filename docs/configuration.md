@@ -63,3 +63,7 @@ A node without `screen` defaults to `note` and requires a title. Use `type: "ext
 `from`, `to` and a nonempty `label` are required. Endpoints reference node IDs in the same flow. `kind` is `primary` (default), `conditional`, or `recovery`. Arrows are orthogonal and labels describe the action or condition.
 
 Cross-flow edges are not part of version 1. Reuse the destination screen in another flow, or add an external/note handoff to explain the boundary. Start and outcome markers express authored intent; clicking them does not invoke a backend operation.
+
+## Delivery progress
+
+Delivery records use the optional sibling `<atlas-name>.progress.json`, with `progress.schema.json` and semantic validation, rather than extra properties in the version 1 workflow. See [Screen progress](progress.md).

@@ -1,6 +1,6 @@
 # Architecture
 
-KetAtlas is a static browser viewer plus a Node.js command-line toolkit. There is no database, account service, application backend, or runtime npm dependency.
+KetAtlas is a static browser viewer plus a Node.js command-line toolkit. There is no database, account service or runtime npm dependency. The localhost CLI has a narrow, protected API to read and save the progress sidecar; static hosting remains read-only.
 
 ```text
 atlas.json + screen HTML
@@ -61,3 +61,7 @@ The default theme uses Inter and KetJS's canonical tokens and primitives. `prepa
 ## Version 1 boundaries
 
 KetAtlas is a viewer and authoring toolkit, not a visual graph editor. Users edit JSON and HTML in their normal tools. It does not record a graph by watching clicks, synthesize screens, calculate backend permissions, or execute the arrow graph as an automated test. Cross-flow edges, collaborative editing and browser-based project audits are outside the current contract.
+
+## Delivery tracking
+
+`src/progress.js` owns progress validation and unique-screen counts. `src/progress-ui.js` owns the screen register and progress editor. `bin/progress.js` shares a locked, revision-checked atomic writer between CLI and local HTTP updates. Progress does not alter graph layout or infer completion from PR state. See [Screen progress](progress.md).

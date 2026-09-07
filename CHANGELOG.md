@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Track delivery per screen in a separate progress JSON, with acceptance checks, blockers, ownership, task references and PR/test/release evidence.
+- Review all screens with filters and shared map badges; edit progress using the local viewer or revision-checked CLI.
+- Refuse stale writes and unsupported verification claims; keep static hosting read-only and existing version 1 workflows compatible.
+- Audit progress references, provide a public schema/API, and test browser editing, concurrency and packaged installation.
+
 ## 0.1.1 — 2026-09-04
 
 - Publish the tested archive through an absolute file path; support guarded retries after a CI workflow fix.

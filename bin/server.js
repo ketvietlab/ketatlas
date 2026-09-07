@@ -21,7 +21,7 @@ const within = (root, path) => {
 /** Local static preview only. Resolves symlinks before checking the root boundary. */
 export async function serve(
   directory,
-  { port = 4178, host = "127.0.0.1", viewer, packageRoot } = {},
+  { port = 4178, host = "127.0.0.1", viewer, packageRoot, handler } = {},
 ) {
   const root = await realpath(resolve(directory));
   if (!(await stat(root)).isDirectory()) throw new Error("Serve root must be a directory.");
@@ -30,6 +30,7 @@ export async function serve(
       res.writeHead(status, { "Content-Type": "text/plain; charset=utf-8" });
       res.end(message);
     };
+    if (handler && (await handler(req, res))) return;
     if (!["GET", "HEAD"].includes(req.method)) return fail(405, "Method not allowed");
     try {
       const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
