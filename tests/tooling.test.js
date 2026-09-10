@@ -1,19 +1,20 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, writeFile, readFile, mkdir, symlink, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, mkdir, symlink, rm, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { serve } from "../bin/server.js";
 import { serveAtlas } from "../bin/viewer.js";
 import { auditAtlas } from "../bin/audit.js";
+import { discoverAtlases } from "../bin/discovery.js";
 const cli = resolve("bin/ketatlas.js");
 const command = (args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8" });
 test("scaffold all templates; audit and serve JSON without a wrapper page", async () => {
   const temp = await mkdtemp(join(tmpdir(), "ketatlas-tooling-"));
   try {
     for (const template of ["basic", "web", "process"]) {
-      const target = join(temp, template);
+      const target = join(temp, `${template}.ketatlas`);
       command(["scaffold", target, "--template", template]);
       const report = await auditAtlas(join(target, "atlas.json"));
       assert(report.valid, JSON.stringify(report));
@@ -36,13 +37,40 @@ test("scaffold all templates; audit and serve JSON without a wrapper page", asyn
     await rm(temp, { recursive: true, force: true });
   }
 });
+test("discovery indexes only valid .ketatlas bundles and directory commands resolve atlas.json", async () => {
+  const temp = await mkdtemp(join(tmpdir(), "ketatlas-discovery-"));
+  try {
+    const target = join(temp, "checkout.ketatlas");
+    command(["scaffold", target]);
+    await mkdir(join(temp, "legacy"));
+    await writeFile(join(temp, "legacy/atlas.json"), await readFile(join(target, "atlas.json")));
+
+    const result = await discoverAtlases(temp);
+    assert.equal(result.version, 1);
+    assert.equal(result.atlases.length, 1);
+    assert.equal(result.atlases[0].directory, await realpath(target));
+    assert(result.atlases[0].screens.length > 0);
+    assert.equal(result.errors.length, 0);
+    assert.equal(JSON.parse(command(["discover", temp, "--json"])).atlases.length, 1);
+    assert.equal(JSON.parse(command(["audit", target, "--json", "--strict"])).valid, true);
+    assert.match(command(["validate", target]), /Valid atlas/);
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+  }
+});
 test("scaffold refuses existing content and audit --strict fails on disconnected nodes", async () => {
   const temp = await mkdtemp(join(tmpdir(), "ketatlas-guard-"));
   try {
-    const existing = join(temp, "keep.txt");
+    const target = join(temp, "existing.ketatlas");
+    await mkdir(target);
+    const existing = join(target, "keep.txt");
     await writeFile(existing, "keep");
-    assert.notEqual(spawnSync(process.execPath, [cli, "scaffold", temp]).status, 0);
+    assert.notEqual(spawnSync(process.execPath, [cli, "scaffold", target]).status, 0);
     assert.equal(await readFile(existing, "utf8"), "keep");
+    assert.notEqual(
+      spawnSync(process.execPath, [cli, "scaffold", join(temp, "missing-suffix")]).status,
+      0,
+    );
     const config = {
       version: 1,
       title: "Disconnected",

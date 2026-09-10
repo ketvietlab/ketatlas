@@ -5,8 +5,8 @@ Start with a user goal: sign in, approve a purchase, or deliver an order. Give e
 ## 1. Create a starting point
 
 ```sh
-ketatlas scaffold ./customer-journeys --template basic
-ketatlas serve ./customer-journeys/atlas.json
+ketatlas scaffold ./customer-journeys.ketatlas --template basic
+ketatlas serve ./customer-journeys.ketatlas
 ```
 
 Open a card with a double-click. The preview is actual HTML; links and JavaScript inside it can work independently of the map. Edit those files before adding more nodes.
@@ -41,7 +41,7 @@ Click a node to highlight incoming/outgoing arrows and follow a next-step button
 ## 5. Audit before sharing
 
 ```sh
-ketatlas audit ./customer-journeys/atlas.json --strict
+ketatlas audit ./customer-journeys.ketatlas --strict
 ```
 
 Keep the JSON and screens in your project's repository. Review changes in pull requests. Share the directory or run the same serve command in the recipient's checkout. No hosted account or service state is required.

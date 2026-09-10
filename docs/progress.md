@@ -71,11 +71,11 @@ Evidence kinds are `pr`, `test`, `release`, `reference`. Required fields: `id`, 
 ## Editing locally and from agents
 
 ```sh
-npx --yes ketatlas@0.2.5 serve atlas.json
-npx --yes ketatlas@0.2.5 serve atlas.json --read-only
-npx --yes ketatlas@0.2.5 progress atlas.json --init
-npx --yes ketatlas@0.2.5 progress atlas.json --json
-npx --yes ketatlas@0.2.5 progress atlas.json --set sign-in --record record.json --expect REVISION_FROM_READ
+npx --yes ketatlas serve ./account-access.ketatlas
+npx --yes ketatlas serve ./account-access.ketatlas --read-only
+npx --yes ketatlas progress ./account-access.ketatlas --init
+npx --yes ketatlas progress ./account-access.ketatlas --json
+npx --yes ketatlas progress ./account-access.ketatlas --set sign-in --record record.json --expect REVISION_FROM_READ
 ```
 
 `--init` explicitly creates Unassessed records and refuses an existing progress file. `--set` replaces one complete screen record; preserve existing checklist IDs, evidence and state references. Read the revision with `--json` first. Do not retry a stale revision by blindly substituting a new one: reload and reconcile changes. `updatedAt` is stamped on successful record writes.

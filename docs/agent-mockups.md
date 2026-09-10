@@ -36,9 +36,11 @@ and preview the result. Return the serve command and verification results.
 
 `$ketatlas` is the explicit skill invocation in Codex. In other agents, use that agent's skill selector or explicitly ask it to use the installed KetAtlas skill. Keep the same product brief.
 
-The deliverable is data and product screen assets: JSON/schema, HTML/CSS/JavaScript, local assets, and documentation. Do not add a package manifest, lockfile, node_modules, or copied viewer/test tooling to make the atlas runnable. Use a global KetAtlas installation or a version-pinned npx command. Browser checks can use the agent's existing tooling outside the atlas folder.
+The deliverable is a `<name>.ketatlas/` bundle containing data and product screen assets: JSON/schema, HTML/CSS/JavaScript, local assets, and documentation. Do not add a package manifest, lockfile, node_modules, or copied viewer/test tooling to make the atlas runnable. Use a global KetAtlas installation or a version-pinned npx command. Browser checks can use the agent's existing tooling outside the atlas folder.
 
 The agent should infer routine details and record assumptions. Provide an exact list when “all screens” means a defined inventory, so missing coverage can be checked against a source.
+
+Before it creates or edits visual screens, the skill asks for one design-system choice: Auto (Két Design System), Két Design System, Carbon, GitHub Primer, Microsoft Fluent 2, no design system, or a repository URL/local path. A design system already named in the request counts as the answer. Auto uses [Két Design System](https://github.com/ketvietlab/ketjs/tree/develop/packages/design-system). The agent inspects and uses the selected system's actual tokens, components, assets, and patterns, then records the source and integration strategy in the atlas README.
 
 ## Use a saved brief for larger projects
 
@@ -52,7 +54,8 @@ Save this template as `mockup-brief.md`, fill in the relevant fields, and ask: *
 - Output directory:
 - Target platforms and viewport sizes:
 - Product content language:
-- Design system, existing HTML, and reference files/URLs:
+- Design system choice (Auto/Két/Carbon/Primer/Fluent 2/none/custom source):
+- Existing HTML and reference files/URLs:
 - Requested flows and screen inventory:
 - Relevant loading, empty, validation, error, and recovery states:
 - Interactions to demonstrate and synthetic demo inputs:
@@ -76,10 +79,11 @@ For an existing prototype, ask the agent to reuse its HTML and add or update the
 ## Review the result
 
 ```sh
-npx ketatlas serve ./tasks/mobile/atlas.json
-npx ketatlas audit ./tasks/mobile/atlas.json --strict
+npx ketatlas discover . --json
+npx ketatlas serve ./tasks/mobile.ketatlas
+npx ketatlas audit ./tasks/mobile.ketatlas --strict
 ```
 
 Check the delivered flow coverage against the brief. Open **Try this screen** to test the actual HTML. A successful audit confirms structural and local-file checks, not visual quality, full product coverage, or working production integrations. Intentional remote URLs require separate verification and produce strict-audit warnings.
 
-The skill lives in this repository so teams can review and evolve it alongside the schema and CLI. It works with the published `ketatlas@0.1.1` format; the skill itself can be distributed through GitHub without waiting for a new npm release.
+The skill lives in this repository so teams can review and evolve it alongside the schema and CLI. It also backfills legacy atlas directories into the discoverable bundle pattern before extending them.

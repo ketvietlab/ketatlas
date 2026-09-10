@@ -5,7 +5,7 @@ description: Create or update interactive HTML mockups and workflow maps in KetA
 
 # KetAtlas
 
-Deliver an editable project containing actual HTML screens and a version 1 `atlas.json` that `npx ketatlas serve` can open. KetAtlas supplies the draggable viewer; the agent authors the product mockups and their flow graph. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
+Deliver an editable `<name>.ketatlas/` bundle containing actual HTML screens and a version 1 `atlas.json` that `npx ketatlas serve` can open. KetAtlas supplies the draggable viewer; the agent authors the product mockups and their flow graph. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
 
 ## Read the brief and choose the scope
 
@@ -18,24 +18,56 @@ Use the user's requirements, existing project files, and design references to de
 
 A brief may be a chat message or a Markdown file; it is not another KetAtlas JSON format. If details are missing, use reasonable defaults and record assumptions. Ask only for information that materially blocks the requested result. Do not introduce unrelated flows or build a production backend to make a mockup work.
 
-Use the supplied product design system when one exists. The starter uses KetJS styles, but KetAtlas can embed product HTML using any design system. For one shared iOS/Android prototype, create one HTML implementation with reusable styles and states unless separate variants were requested.
+## Choose the design system
+
+Before scaffolding or editing visual screens, ask the user to choose a design system unless the current request already makes the choice explicit. Present these options in one concise prompt:
+
+1. **Auto (recommended)** — use [Két Design System](https://github.com/ketvietlab/ketjs/tree/develop/packages/design-system).
+2. **Két Design System** — use the same canonical Két source explicitly.
+3. **Carbon Design System**.
+4. **GitHub Primer**.
+5. **Microsoft Fluent 2**.
+6. **No design system** — create product-specific shared CSS without claiming conformance to a named system.
+7. **Custom source** — ask for a repository URL or local design-system path if it was not included with the selection.
+
+Do not start visual screen implementation until the user answers. If the user explicitly delegates the choice to the agent, treat that as **Auto**. This selection prompt is still required for an existing atlas; its documented/current system may be offered as the likely choice. A request that already names a system or supplies a design-system source counts as an answer and must not be asked again.
+
+Inspect the selected source, its usage documentation, tokens, components, icons, and relevant product patterns before mocking. Reuse its actual public assets and composition patterns when available; do not merely imitate its color palette. Replace incompatible starter styling rather than layering multiple design systems. For one shared iOS/Android prototype, create one HTML implementation with reusable styles and states unless separate variants were requested.
+
+Prefer a local adapter descriptor with `schemaVersion: "ketatlas.design-system-adapter.v1"` when the selected design system provides one. Discover it from the user-supplied path, a repository `design-system.atlas.json`, or the package's documented `./atlas/profile.json` export. Read the descriptor before using its assets or commands; do not assume capabilities it does not declare. If there is no adapter, use the design system through its documented HTML/CSS interface and record that no reproducible adapter lock is available.
+
+For Két Design System, prefer the descriptor exported at `@ketvietlab/design-system/atlas/profile.json` and its declared `ket-design-system-atlas` materializer. Read that descriptor for asset names, root attributes, slots, hooks, and state ownership instead of hard-coding them.
+
+Keep the atlas self-contained and dependency-free. Do not add a consumer package installation or custom bundler just to use a design system. Materialize or copy permitted static assets only when the selected source supports it, preserve required notices, and do not rely on remote runtime assets when the requested mockup must work offline. Record the selected system, source URL/path, pinned version or commit when known, adapter/asset strategy, and any license or fidelity limitation in the bundle README.
 
 ## Scaffold or extend
 
 Node.js 22 or newer is required. For a new, empty destination:
 
 ```sh
-npx --yes ketatlas scaffold ./tasks/mockups --template basic
+npx --yes ketatlas scaffold ./tasks/mockups.ketatlas --template basic
 ```
 
 Choose `basic` for mobile, `web` for desktop, or `process` for steps without UI. These are starting examples, not required product flows. Replace their sample content with the requested product.
 
-For an existing atlas, read and edit its JSON and screen files directly. Preserve useful IDs and URLs; scaffold refuses a nonempty directory and has no `--force` option. Pin the CLI version in the README commands (for example `npx --yes ketatlas@0.1.1 serve atlas.json`) or use a global installation. A consumer atlas does not need a local package installation.
+For an existing atlas, read and edit its JSON and screen files directly. Preserve useful IDs and URLs; scaffold refuses a nonempty directory and has no `--force` option. Pin the CLI version in the README commands or use a global installation. A consumer atlas does not need a local package installation.
+
+### Backfill legacy projects
+
+Before changing an existing atlas, run `ketatlas discover <workspace> --json`. If its manifest is not located at `<name>.ketatlas/atlas.json`, migrate it as part of the task:
+
+1. Inventory the manifest, sibling progress file, schema, README, screens, styles and assets. Record every relative `$schema`, screen URL and node URL before moving anything.
+2. If the containing directory is a self-contained Atlas project, rename that directory to a concise `<name>.ketatlas`; moving the whole directory preserves relative URLs.
+3. If the manifest shares a directory with unrelated application code, create a sibling `<name>.ketatlas` bundle. Move only Atlas-owned files, preserve Git history when possible, and rewrite relative paths for resources that intentionally remain outside the bundle.
+4. Keep one canonical manifest. Do not leave a copied legacy `atlas.json` behind or delete files whose ownership is unclear.
+5. Run `ketatlas discover <workspace> --json`, `ketatlas validate <name>.ketatlas`, and `ketatlas audit <name>.ketatlas --strict` after migration. Fix discovery errors and broken paths before editing product flows.
+
+Legacy JSON paths remain accepted by the CLI for migration, but new and updated deliverables must use the bundle pattern so desktop tools can discover them without scanning arbitrary JSON.
 
 A self-contained project typically has:
 
 ```text
-tasks/mockups/
+tasks/mockups.ketatlas/
   atlas.json
   ketatlas.schema.json
   screens/                 HTML pages and shared CSS/JavaScript
@@ -45,7 +77,7 @@ tasks/mockups/
 
 Keep product assets inside the served directory when practical. Deliver JSON/schema, screen HTML/CSS/JavaScript, assets, and documentation. Do not scaffold a `package.json`, lockfile, `node_modules`, asset build scripts, or a copied viewer/test harness in the atlas folder just to use KetAtlas. The installed CLI supplies scaffold, serve, validate, and audit. Browser verification can use the agent's external tooling. Preserve unrelated application tooling when extending an existing repository.
 
-Do not create a wrapper viewer or a custom canvas: `serve atlas.json` provides it.
+Do not create a wrapper viewer or a custom canvas: `serve ./tasks/mockups.ketatlas` provides it.
 
 ## Model the journey
 
@@ -123,9 +155,10 @@ The default iframe sandbox allows scripts and forms but gives the page an opaque
 Run from the user's project with the same root for audit and serve:
 
 ```sh
-npx --yes ketatlas validate ./tasks/mockups/atlas.json
-npx --yes ketatlas audit ./tasks/mockups/atlas.json --strict
-npx --yes ketatlas serve ./tasks/mockups/atlas.json
+npx --yes ketatlas discover . --json
+npx --yes ketatlas validate ./tasks/mockups.ketatlas
+npx --yes ketatlas audit ./tasks/mockups.ketatlas --strict
+npx --yes ketatlas serve ./tasks/mockups.ketatlas
 ```
 
 Use `--root .` on both audit and serve if screens or assets intentionally live outside the atlas directory but inside the project. Use `--port 4180` or another free port when necessary. Refresh after file edits; there is no hot reload.
@@ -138,7 +171,7 @@ Update the project's README with flow-to-screen/state coverage, assumptions, dem
 
 ## Maintain screen delivery progress
 
-When implementing or reviewing screens, track progress in the sibling `<atlas-name>.progress.json`. Use KetAtlas 0.2.0 or newer. Keep version 1 workflow JSON unchanged. Read `ketatlas progress atlas.json --json`, preserve existing evidence/check IDs and state references, then update one record with `--set <screen-id> --record <record.json> --expect <revision>`. Re-read and reconcile conflicts instead of overwriting another writer. Run `audit` after updates.
+When implementing or reviewing screens, track progress in `atlas.progress.json` beside the bundle manifest. Keep version 1 workflow JSON unchanged. Read `ketatlas progress <name>.ketatlas --json`, preserve existing evidence/check IDs and state references, then update one record with `--set <screen-id> --record <record.json> --expect <revision>`. Re-read and reconcile conflicts instead of overwriting another writer. Run `audit` after updates.
 
 Map task scope to screen IDs before assigning progress. Start unknown coverage at `unassessed`; a mockup is not implementation evidence. Use `planned`, `in_progress`, `in_review`, `implemented`, `verified` with a separate blocker reason/next action. Link PRs and exact merge commits, pin/release evidence, and test evidence at the revision/environment actually checked. Do not infer deployment, full screen coverage or verification from a PR merge or green aggregate CI. Completed acceptance checks need evidence; `verified` requires passed test evidence with revision and environment for every recorded check and no blocker. Track error/recovery states using check `nodes` references. Leave unrelated or unreviewed product surfaces unassessed and say why. See `docs/progress.md` in the package for the complete contract.
 

@@ -57,10 +57,18 @@ try {
     await page.mouse.down();
     await page.mouse.move(head.x + 160, head.y + 80, { steps: 8 });
     await page.mouse.up();
-    assert((await state()).pan.x > before.pan.x + 100);
+    assert((await state()).pan.x > before.pan.x + 150);
     assert.equal(await page.locator("#screen-dialog").evaluate((d) => d.open), false);
     await page.getByRole("button", { name: "Zoom in", exact: true }).click();
-    assert((await state()).zoom > before.zoom);
+    assert(Math.abs((await state()).zoom / before.zoom - 1.3) < 0.01);
+    const wheelBefore = await state(),
+      viewport = await page.locator("#map-viewport").boundingBox();
+    await page.mouse.move(viewport.x + viewport.width / 2, viewport.y + viewport.height / 2);
+    await page.mouse.wheel(40, 60);
+    await page.waitForTimeout(50);
+    const wheelAfter = await state();
+    assert(wheelAfter.pan.x < wheelBefore.pan.x - 50);
+    assert(wheelAfter.pan.y < wheelBefore.pan.y - 80);
     await page.locator("#map-viewport").focus();
     await page.keyboard.press("0");
     assert.equal((await state()).zoom, 0.8);

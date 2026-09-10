@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Standardize discoverable projects as `<name>.ketatlas/atlas.json` bundles, add `discover`, accept bundle directories in Atlas commands, and teach the bundled skill to backfill legacy projects safely.
+- Accelerate drag, wheel, keyboard and pinch camera controls while preserving pointer-anchored zoom.
+- Require agents to confirm a design system before visual mockup work, with Auto defaulting to Két Design System and explicit Carbon, Primer, Fluent 2, no-system, and custom-source options.
+
 ## 0.2.5
 
 - Show separate Checks and Implemented percentage badges per workflow. Implemented includes Verified screens; project verification remains separate on the top bar. Display a dash for Checks when no checklist is recorded.

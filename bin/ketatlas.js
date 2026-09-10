@@ -8,21 +8,29 @@ import { validateAtlas } from "../src/config.js";
 import { serve } from "./server.js";
 import { serveAtlas } from "./viewer.js";
 import { auditAtlas } from "./audit.js";
+import {
+  discoverAtlases,
+  isAtlasDirectory,
+  requireAtlasDirectory,
+  resolveAtlasFile,
+} from "./discovery.js";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const help = `KetAtlas — scaffold, serve, and audit HTML workflow maps
 
-  ketatlas scaffold <directory> [--template basic|web|process]
-  ketatlas serve <atlas.json> [--port 4178] [--root directory]
-  ketatlas audit <atlas.json> [--root directory] [--json] [--strict]
-  ketatlas validate <atlas.json>
-  ketatlas progress <atlas.json> [--json] [--init]
-  ketatlas progress <atlas.json> --set <screen-id> --record <record.json> --expect <revision>
+  ketatlas scaffold <name.ketatlas> [--template basic|web|process]
+  ketatlas discover <directory> [--json]
+  ketatlas serve <name.ketatlas|atlas.json> [--port 4178] [--root directory]
+  ketatlas audit <name.ketatlas|atlas.json> [--root directory] [--json] [--strict]
+  ketatlas validate <name.ketatlas|atlas.json>
+  ketatlas progress <name.ketatlas|atlas.json> [--json] [--init]
+  ketatlas progress <name.ketatlas|atlas.json> --set <screen-id> --record <record.json> --expect <revision>
   ketatlas --version
 
 Examples:
-  npx ketatlas scaffold my-atlas
-  npx ketatlas serve my-atlas/atlas.json
-  npx ketatlas audit my-atlas/atlas.json --strict
+  npx ketatlas scaffold my-atlas.ketatlas
+  npx ketatlas discover . --json
+  npx ketatlas serve my-atlas.ketatlas
+  npx ketatlas audit my-atlas.ketatlas --strict
 
 Serve binds to 127.0.0.1. No HTML wrapper, build, account, or backend required.
 `;
@@ -61,7 +69,7 @@ async function main(args) {
       template = options.template || "basic";
     if (!["basic", "web", "process"].includes(template))
       throw new Error("Templates: basic, web, process.");
-    const destination = resolve(target);
+    const destination = requireAtlasDirectory(target);
     let existing;
     try {
       existing = await readdir(destination);
@@ -79,8 +87,23 @@ async function main(args) {
         errorOnExist: true,
       });
     console.log(
-      `Created ${destination}\n\nNext: npx ketatlas serve "${join(destination, "atlas.json")}"\nEdit atlas.json to make it yours.`,
+      `Created ${destination}\n\nNext: npx ketatlas serve "${destination}"\nEdit atlas.json to make it yours.`,
     );
+    return;
+  }
+  if (command === "discover") {
+    const { target, options } = parse(rest, { json: "boolean" }),
+      result = await discoverAtlases(target);
+    if (options.json) console.log(JSON.stringify(result, null, 2));
+    else {
+      for (const atlas of result.atlases)
+        console.log(`${atlas.title}\t${atlas.path}\t${atlas.screens.length} screens`);
+      for (const error of result.errors) console.error(`ERROR ${error.path}: ${error.message}`);
+      console.log(
+        `${result.atlases.length} atlas${result.atlases.length === 1 ? "" : "es"} in ${result.root}`,
+      );
+    }
+    if (result.errors.length) process.exitCode = 1;
     return;
   }
   if (command === "audit") {
@@ -90,7 +113,7 @@ async function main(args) {
       strict: "boolean",
       output: "string",
     });
-    const report = await auditAtlas(target, options),
+    const report = await auditAtlas(await resolveAtlasFile(target), options),
       pass = report.valid && (!options.strict || report.warnings.length === 0);
     if (options.output)
       await writeFile(resolve(options.output), JSON.stringify(report, null, 2) + "\n", {
@@ -109,7 +132,7 @@ async function main(args) {
   }
   if (command === "validate") {
     const { target } = parse(rest, {}),
-      config = JSON.parse(await readFile(resolve(target), "utf8")),
+      config = JSON.parse(await readFile(await resolveAtlasFile(target), "utf8")),
       result = validateAtlas(config);
     for (const issue of result.errors) console.error(`ERROR ${issue.path}: ${issue.message}`);
     for (const issue of result.warnings) console.warn(`WARN ${issue.path}: ${issue.message}`);
@@ -130,7 +153,7 @@ async function main(args) {
       record: "string",
       expect: "string",
     });
-    const file = resolve(target),
+    const file = await resolveAtlasFile(target),
       atlas = JSON.parse(await readFile(file, "utf8"));
     const valid = validateAtlas(atlas);
     if (!valid.valid) throw new Error(valid.errors.map((e) => e.message).join("; "));
@@ -180,9 +203,14 @@ async function main(args) {
     const directory = (await stat(resolve(target))).isDirectory();
     if (directory && options.root)
       throw new Error("--root is only needed when serving an atlas JSON file.");
-    const server = directory
-      ? await serve(target, { port })
-      : await serveAtlas(target, { port, root: options.root, readOnly: options["read-only"] });
+    const server =
+      directory && !isAtlasDirectory(target)
+        ? await serve(target, { port })
+        : await serveAtlas(await resolveAtlasFile(target), {
+            port,
+            root: options.root,
+            readOnly: options["read-only"],
+          });
     console.log(
       `KetAtlas: http://127.0.0.1:${server.address().port}\nServing ${resolve(target)}\nPress Ctrl+C to stop.`,
     );

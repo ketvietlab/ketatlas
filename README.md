@@ -17,21 +17,22 @@ https://github.com/user-attachments/assets/13f24fc8-7b8e-4bda-9e02-364c120ee163
 [KetAtlas is available on npm](https://www.npmjs.com/package/ketatlas). Use Node.js 22+ and run it from any directory:
 
 ```sh
-npx --yes ketatlas@0.2.5 scaffold my-atlas --template web
-npx --yes ketatlas@0.2.5 serve my-atlas/atlas.json
-npx --yes ketatlas@0.2.5 audit my-atlas/atlas.json --strict
+npx --yes ketatlas scaffold my-atlas.ketatlas --template web
+npx --yes ketatlas discover . --json
+npx --yes ketatlas serve my-atlas.ketatlas
+npx --yes ketatlas audit my-atlas.ketatlas --strict
 ```
 
 Or install the CLI once for your user account:
 
 ```sh
-npm install --global ketatlas@0.2.5
-ketatlas scaffold my-atlas
-ketatlas serve my-atlas/atlas.json
-ketatlas audit my-atlas/atlas.json --strict
+npm install --global ketatlas
+ketatlas scaffold my-atlas.ketatlas
+ketatlas serve my-atlas.ketatlas
+ketatlas audit my-atlas.ketatlas --strict
 ```
 
-The consumer folder contains `atlas.json`, its schema, product HTML/CSS/JavaScript, local assets, and documentation. It needs no `package.json`, lockfile, `node_modules`, build step, or copy of the viewer. The CLI supplies scaffold, serving, and static audit from its own installation. `audit` leaves project files unchanged unless an output file is explicitly requested. Viewing with `serve` does not write; explicit **Save progress** writes the sibling progress file. Use `--read-only` to disable editing.
+The consumer bundle is named `<name>.ketatlas/` and contains `atlas.json`, its schema, product HTML/CSS/JavaScript, local assets, and documentation. The stable directory suffix lets desktop tools discover atlases without parsing unrelated JSON. A bundle needs no `package.json`, lockfile, `node_modules`, build step, or copy of the viewer. The CLI supplies scaffold, discovery, serving, and static audit from its own installation. `audit` leaves project files unchanged unless an output file is explicitly requested. Viewing with `serve` does not write; explicit **Save progress** writes the sibling progress file. Use `--read-only` to disable editing.
 
 Pin the version in run commands or the global installation for reproducible team workflows. Product scripts implement mock screen interactions; they are authored content, not a local installation of KetAtlas. Framework tooling and tests stay in the KetAtlas repository.
 
@@ -81,12 +82,13 @@ Open **Screens** to filter screen progress, review blockers and edit acceptance 
 
 ## Commands
 
-| Command                 | Purpose                                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------------------ |
-| `scaffold <directory>`  | Create a project from `basic`, `web`, or `process`. Refuses to overwrite existing content. |
-| `serve <atlas.json>`    | Start the viewer and serve local screens. Defaults to port 4178 on localhost.              |
-| `audit <atlas.json>`    | Check configuration, reachability, local files, and literal HTML/CSS references.           |
-| `validate <atlas.json>` | Validate configuration only, without reading screen files.                                 |
+| Command                    | Purpose                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| `scaffold <name.ketatlas>` | Create a bundle from `basic`, `web`, or `process`. Refuses existing content.     |
+| `discover <directory>`     | Find valid `*.ketatlas/atlas.json` bundles and report invalid bundles.           |
+| `serve <bundle\|json>`     | Start the viewer and serve local screens. Defaults to port 4178 on localhost.    |
+| `audit <bundle\|json>`     | Check configuration, reachability, local files, and literal HTML/CSS references. |
+| `validate <bundle\|json>`  | Validate configuration only, without reading screen files.                       |
 
 Use `--help` for options, `--root` when assets live above the JSON directory, and `audit --json` for CI reports. [Full CLI reference →](docs/cli.md)
 
@@ -114,7 +116,7 @@ npm ci
 npm run dev
 ```
 
-The playground includes mobile sign-in, desktop approval, and a fulfilment process. These development dependencies are not required in consumer projects. To try an unpublished checkout, use `npx --yes --package ~/dev/ketatlas ketatlas serve /path/to/my-atlas/atlas.json`.
+The playground includes mobile sign-in, desktop approval, and a fulfilment process. These development dependencies are not required in consumer projects. To try an unpublished checkout, use `npx --yes --package ~/dev/ketatlas ketatlas serve /path/to/my-atlas.ketatlas`.
 
 Stable version increases merged into `develop` are automatically published after CI verifies the package. See [Releasing](docs/releasing.md).
 

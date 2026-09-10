@@ -1,5 +1,11 @@
 # Migrating the KétSuite mobile map
 
+## Bundle layout backfill
+
+Current projects use `<name>.ketatlas/atlas.json`. For a legacy self-contained Atlas directory, rename the whole directory so relative screen, style and asset URLs remain unchanged. When `atlas.json` shares a directory with unrelated application code, create a sibling `<name>.ketatlas` bundle, move only Atlas-owned files, and update relative URLs for resources that intentionally remain outside it. Keep one canonical manifest, then run `ketatlas discover <workspace> --json`, `ketatlas validate <name>.ketatlas`, and `ketatlas audit <name>.ketatlas --strict`.
+
+The CLI continues to accept a direct legacy JSON path so migration can be audited before and after the move. Discovery intentionally reports only the standard bundle pattern.
+
 The original mobile map remains in its project. KetAtlas does not copy its business data or change the mobile repository. The extraction generalizes the viewer; project migration is a separate configuration change.
 
 ## Field mapping

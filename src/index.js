@@ -12,6 +12,16 @@ import { template, escapeHTML as e } from "./template.js";
 import { icons } from "./icons.js";
 export { validateAtlas, AtlasValidationError } from "./config.js";
 
+const cameraMotion = Object.freeze({
+  dragPan: 1.35,
+  wheelPan: 1.45,
+  wheelZoom: 0.0032,
+  pinchZoom: 1.2,
+  zoomStep: 1.3,
+  keyPan: 120,
+  keyPanLarge: 260,
+});
+
 /** Mount an isolated viewer. Await atlas.ready before measuring or focusing it. */
 export function createAtlas(container, input, options = {}) {
   if (!(container instanceof HTMLElement))
@@ -429,10 +439,8 @@ export function createAtlas(container, input, options = {}) {
     pointers.set(event.pointerId, point(event));
     if (pointers.size >= 2 && pinch) {
       const [a, b] = [...pointers.values()],
-        z = Math.max(
-          0.18,
-          Math.min(2.2, (pinch.z * Math.hypot(a.x - b.x, a.y - b.y)) / Math.max(1, pinch.distance)),
-        );
+        ratio = Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, pinch.distance),
+        z = Math.max(0.18, Math.min(2.2, pinch.z * Math.pow(ratio, cameraMotion.pinchZoom)));
       view = { z, x: (a.x + b.x) / 2 - pinch.worldX * z, y: (a.y + b.y) / 2 - pinch.worldY * z };
       suppressClick = true;
       schedule();
@@ -445,8 +453,8 @@ export function createAtlas(container, input, options = {}) {
     if (Math.hypot(dx, dy) > 4) drag.moved = true;
     if (drag.moved) {
       viewport.classList.add("dragging");
-      view.x = drag.x + dx;
-      view.y = drag.y + dy;
+      view.x = drag.x + dx * cameraMotion.dragPan;
+      view.y = drag.y + dy * cameraMotion.dragPan;
       schedule();
     }
   });
@@ -477,10 +485,16 @@ export function createAtlas(container, input, options = {}) {
       event.preventDefault();
       if (event.ctrlKey || event.metaKey) {
         const p = point(event);
-        zoomTo(view.z * Math.exp(-event.deltaY * 0.002), p.x, p.y);
+        zoomTo(view.z * Math.exp(-event.deltaY * cameraMotion.wheelZoom), p.x, p.y);
       } else {
-        view.x -= event.deltaX;
-        view.y -= event.deltaY;
+        const unit =
+          event.deltaMode === WheelEvent.DOM_DELTA_LINE
+            ? 16
+            : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+              ? viewport.clientHeight
+              : 1;
+        view.x -= event.deltaX * unit * cameraMotion.wheelPan;
+        view.y -= event.deltaY * unit * cameraMotion.wheelPan;
         syncCurrentFromPan();
         schedule();
       }
@@ -489,17 +503,17 @@ export function createAtlas(container, input, options = {}) {
   );
   viewport.addEventListener("keydown", (event) => {
     if (event.target.closest("button,a,input") || $("screen-dialog").open) return;
-    const step = event.shiftKey ? 180 : 80;
+    const step = event.shiftKey ? cameraMotion.keyPanLarge : cameraMotion.keyPan;
     if (event.key === "ArrowLeft") view.x += step;
     else if (event.key === "ArrowRight") view.x -= step;
     else if (event.key === "ArrowUp") view.y += step;
     else if (event.key === "ArrowDown") view.y -= step;
     else if (["+", "="].includes(event.key)) {
-      zoomTo(view.z * 1.2);
+      zoomTo(view.z * cameraMotion.zoomStep);
       event.preventDefault();
       return;
     } else if (event.key === "-") {
-      zoomTo(view.z / 1.2);
+      zoomTo(view.z / cameraMotion.zoomStep);
       event.preventDefault();
       return;
     } else if (event.key.toLowerCase() === "f") {
@@ -566,8 +580,8 @@ export function createAtlas(container, input, options = {}) {
     if (button) progressUI.edit(button.dataset.editProgress);
   });
   $("flow-search").addEventListener("input", sidebar);
-  $("zoom-in").onclick = () => zoomTo(view.z * 1.2);
-  $("zoom-out").onclick = () => zoomTo(view.z / 1.2);
+  $("zoom-in").onclick = () => zoomTo(view.z * cameraMotion.zoomStep);
+  $("zoom-out").onclick = () => zoomTo(view.z / cameraMotion.zoomStep);
   $("zoom-reset").onclick = () => zoomTo(1);
   $("zoom-fit").onclick = fitFlow;
   $("minimap-fit").onclick = fitFlow;

@@ -18,6 +18,7 @@ const [info] = JSON.parse(packed),
 const files = new Set(info.files.map((f) => f.path));
 for (const path of [
   "bin/ketatlas.js",
+  "bin/discovery.js",
   "bin/viewer.js",
   "bin/audit.js",
   "src/index.js",
@@ -41,7 +42,7 @@ for (const path of [
 for (const path of files)
   assert(!path.startsWith("node_modules/") && !path.startsWith("artifacts/"));
 const temp = await mkdtemp(join(tmpdir(), "ketatlas-package-")),
-  project = join(temp, "my-atlas");
+  project = join(temp, "my-atlas.ketatlas");
 const npmArgs = ["exec", "--offline", "--yes", `--package=${archive}`, "--", "ketatlas"];
 let child, browser;
 try {
@@ -112,7 +113,7 @@ try {
   }
   const snapshots = new Map();
   for (const template of ["basic", "web", "process"]) {
-    const destination = template === "web" ? project : join(temp, template);
+    const destination = template === "web" ? project : join(temp, `${template}.ketatlas`);
     (template === "web" ? run : globalRun)(["scaffold", destination, "--template", template]);
     const before = await snapshot(destination);
     const file = join(destination, "atlas.json");
@@ -138,7 +139,7 @@ try {
       });
     });
   const port = await freePort();
-  child = spawn(executable, ["serve", "atlas.json", "--port", String(port)], {
+  child = spawn(executable, ["serve", ".", "--port", String(port)], {
     cwd: project,
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
@@ -184,7 +185,7 @@ try {
   let npxServer;
   try {
     const npxPort = await freePort();
-    npxServer = spawn("npm", [...npmArgs, "serve", "atlas.json", "--port", String(npxPort)], {
+    npxServer = spawn("npm", [...npmArgs, "serve", ".", "--port", String(npxPort)], {
       cwd: project,
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],

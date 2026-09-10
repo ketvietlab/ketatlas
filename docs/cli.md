@@ -1,30 +1,41 @@
 # CLI reference
 
-Install once with `npm install --global ketatlas@0.1.1`, or prefix commands with `npx --yes ketatlas@0.1.1`. No dependency installation is required in the consumer directory. `node /path/to/ketatlas/bin/ketatlas.js` is also available to framework maintainers.
+Install once with `npm install --global ketatlas`, or prefix commands with `npx --yes ketatlas`. No dependency installation is required in the consumer directory. `node /path/to/ketatlas/bin/ketatlas.js` is also available to framework maintainers.
 
 A consumer keeps only its JSON/schema, product HTML/CSS/JavaScript, assets, and documentation. The package manifest, lockfile, development scripts, and browser test dependencies belong to the tool. Normal `serve`, `validate`, and `audit` calls do not create files in the consumer; `audit --output` is an explicit exception.
 
 ## Scaffold
 
 ```sh
-ketatlas scaffold ./journeys
-ketatlas scaffold ./approvals --template web
-ketatlas scaffold ./operations --template process
+ketatlas scaffold ./journeys.ketatlas
+ketatlas scaffold ./approvals.ketatlas --template web
+ketatlas scaffold ./operations.ketatlas --template process
 ```
 
 `basic` is the default: two interactive mobile pages and one flow. `web` contains desktop purchase approval pages. `process` contains notes and an external handoff, without HTML screens. Every template includes a local JSON Schema for editor completion and a README. Product HTML and its styles belong to the new project.
 
-`init` is an alias for `scaffold`. The destination must be missing or empty. Existing files are never overwritten; there is no `--force` flag.
+`init` is an alias for `scaffold`. The destination must end in `.ketatlas` and be missing or empty. Existing files are never overwritten; there is no `--force` flag.
+
+## Discover bundles
+
+```sh
+ketatlas discover .
+ketatlas discover . --json
+```
+
+Discovery walks the selected workspace for exact `*.ketatlas/atlas.json` bundles. It skips dependency, generated, cache, Git and vendor directories; it does not parse unrelated JSON. The JSON report contains `version`, `root`, `atlases`, and `errors`, including each atlas title, path, directory, screens and flow count. Invalid bundle manifests are reported and produce exit code 1.
+
+Legacy manifest paths remain valid command arguments, but discovery intentionally ignores them. Migrate a self-contained legacy directory by renaming it to `<name>.ketatlas`; see the bundled skill for mixed-directory migration safeguards.
 
 ## Serve a JSON file
 
 ```sh
-ketatlas serve ./tasks/onboarding/atlas.json
-ketatlas serve ./tasks/onboarding/atlas.json --port 4180
-ketatlas serve ./tasks/onboarding/atlas.json --root .
+ketatlas serve ./tasks/onboarding.ketatlas
+ketatlas serve ./tasks/onboarding.ketatlas --port 4180
+ketatlas serve ./legacy/atlas.json --root .
 ```
 
-The tool supplies the viewer page. It validates the JSON at startup, serves your files, and mounts the atlas at `/`. The default file root is the JSON file's directory. Choose `--root` when a relative URL points to a sibling directory outside that default root. The JSON must be inside the selected root.
+The tool supplies the viewer page. It validates the JSON at startup, serves your files, and mounts the atlas at `/`. Passing a `.ketatlas` directory resolves its `atlas.json` and uses the bundle as the file root. Explicit legacy JSON paths still support `--root` when a relative URL points outside the manifest directory.
 
 Open the printed localhost URL. Changes appear after refreshing; there is no hot reload or authoring server state. Use `?flow=your-flow-id` or `?screen=your-screen-id` to open a specific part of the map. An unknown ID falls back to the first flow.
 
@@ -35,10 +46,10 @@ The `/__ketatlas__/` route is reserved for viewer assets. Dotfiles and paths res
 ## Audit
 
 ```sh
-ketatlas audit ./atlas.json
-ketatlas audit ./atlas.json --root .. --strict
-ketatlas audit ./atlas.json --json
-ketatlas audit ./atlas.json --json --output audit-report.json
+ketatlas audit ./tasks/onboarding.ketatlas
+ketatlas audit ./tasks/onboarding.ketatlas --strict
+ketatlas audit ./tasks/onboarding.ketatlas --json
+ketatlas audit ./tasks/onboarding.ketatlas --json --output audit-report.json
 ```
 
 Audit checks:
@@ -64,7 +75,7 @@ Exit codes:
 ## Validate and version
 
 ```sh
-ketatlas validate ./atlas.json
+ketatlas validate ./tasks/onboarding.ketatlas
 ketatlas --version
 ketatlas --help
 ```
@@ -73,4 +84,4 @@ ketatlas --help
 
 ## Screen progress
 
-`progress <atlas.json> --json` reads the progress record, content revision and unique-screen summary. `--init` creates a missing sidecar. `--set <screen-id> --record <record.json> --expect <revision>` replaces one record with conflict detection. `serve <atlas.json> --read-only` disables local progress writes. See [Screen progress](progress.md) for examples and persistence rules.
+`progress <bundle|atlas.json> --json` reads the progress record, content revision and unique-screen summary. `--init` creates a missing sidecar. `--set <screen-id> --record <record.json> --expect <revision>` replaces one record with conflict detection. `serve <bundle|atlas.json> --read-only` disables local progress writes. See [Screen progress](progress.md) for examples and persistence rules.
