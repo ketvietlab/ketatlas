@@ -26,7 +26,11 @@ const cameraMotion = Object.freeze({
 export function createAtlas(container, input, options = {}) {
   if (!(container instanceof HTMLElement))
     throw new TypeError("createAtlas requires an HTML element.");
-  const config = normalizeAtlas(input, options.baseURL || document.baseURI);
+  const config = normalizeAtlas(
+    input,
+    options.baseURL || document.baseURI,
+    options.screenBaseURL || options.baseURL || document.baseURI,
+  );
   const progressData = requireProgress(options.progress || emptyProgress(), config);
   const maxPreviews = options.maxPreviews ?? 24,
     previewThreshold = options.previewThreshold ?? 0.3;

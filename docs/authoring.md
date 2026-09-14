@@ -1,6 +1,6 @@
 # Authoring a useful atlas
 
-Start with a user goal: sign in, approve a purchase, or deliver an order. Give each flow one clear start and a small number of outcomes. Screen files can come from an existing prototype; KetAtlas does not require a particular frontend framework.
+Start with a user goal: sign in, approve a purchase, or deliver an order. Give each flow one clear start and a small number of outcomes. Screen routes come from the product's actual framework; static HTML remains supported for products that are truly static.
 
 ## 1. Create a starting point
 
@@ -13,7 +13,7 @@ Open a card with a double-click. The preview is actual HTML; links and JavaScrip
 
 ## 2. Register your screens
 
-Add each reusable screen once in `screens`. Use paths relative to `atlas.json`, including query parameters for prototype states. A React/Vite prototype can expose its own embedded routes through an HTTP URL, provided it permits iframe embedding. Audit reports remote URLs for separate verification.
+Add each reusable screen once in `screens`. Use relative paths, including query parameters for prototype states. Static paths resolve beside `atlas.json`; framework paths resolve beneath the native renderer's `screenBasePath`.
 
 For a desktop page:
 
@@ -27,6 +27,44 @@ For a desktop page:
 ```
 
 HTML should include a viewport meta tag. Avoid adding a second device frame, reviewer sidebar or fixed outer margin inside the page being embedded; point to its clean preview route instead.
+
+## Framework-native screens
+
+Use the same implementation framework as the product and design system. React screens stay React, Vue screens stay Vue, and KetJS server components render through KetJS. Do not reproduce component output with copied HTML, string templates, DOM post-processing, or a parallel Atlas component format.
+
+Keep one presentation path:
+
+```text
+business loader ─┐
+                 ├─ shared screen presenter ─ design-system components/styles
+Atlas fixture ───┘
+```
+
+The business loader supplies real data, permissions, and actions. The Atlas route supplies a deterministic fixture selected by its route/query state. Both call the same presenter. If several atlases need the same shell, field, table, or layout, move that composition and its styles into one shared product module rather than copying it between bundles.
+
+Place this sidecar beside `atlas.json`:
+
+```json
+{
+  "$schema": "https://unpkg.com/ketatlas@0.4.0/renderer.schema.json",
+  "version": 1,
+  "framework": "ketjs",
+  "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
+  "cwd": "../..",
+  "readyPath": "/__atlas/ready",
+  "screenBasePath": "/__atlas/customer-care/"
+}
+```
+
+Commands are argv arrays and do not run through a shell. `cwd` is relative to the bundle. The command may use `{host}`, `{port}`, and `{atlasDirectory}`; the same values are also available through `KETATLAS_HOST`, `KETATLAS_HTML_PORT`, and `KETATLAS_PROJECT_DIR`. `readyPath` must return 2xx. `screenBasePath` must start and end with `/`.
+
+Run the two origins explicitly:
+
+```sh
+npx --yes ketatlas@0.4.0 serve ./customer-journeys.ketatlas --renderer --port 60550 --html-port 60551
+```
+
+The first origin owns only the map and progress API. The second origin owns HTML, framework modules, styles, assets, and screen-side requests. Audit validates the renderer contract and graph without executing the command; browser verification must exercise the combined result.
 
 ## 3. Connect actions and decisions
 

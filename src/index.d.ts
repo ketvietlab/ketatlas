@@ -114,6 +114,8 @@ export interface AtlasOptions {
   progressToken?: string;
   /** Relative screen URLs resolve against this URL. loadAtlas uses the JSON URL by default. */
   baseURL?: string;
+  /** Override only relative screen and screen-node URLs, for a separate framework renderer. */
+  screenBaseURL?: string;
   /** Public directory containing styles/ and assets/, ending in /. Needed when bundling the JS. */
   assetBaseURL?: string;
   initialFlow?: string;

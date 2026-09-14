@@ -15,11 +15,11 @@ import {
   resolveAtlasFile,
 } from "./discovery.js";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const help = `KetAtlas — scaffold, serve, and audit HTML workflow maps
+const help = `KetAtlas — scaffold, serve, and audit framework-native workflow maps
 
   ketatlas scaffold <name.ketatlas> [--template basic|web|process]
   ketatlas discover <directory> [--json]
-  ketatlas serve <name.ketatlas|atlas.json> [--port 4178] [--root directory]
+  ketatlas serve <name.ketatlas|atlas.json> [--port 4178] [--root directory] [--renderer] [--html-port 4179]
   ketatlas audit <name.ketatlas|atlas.json> [--root directory] [--json] [--strict]
   ketatlas validate <name.ketatlas|atlas.json>
   ketatlas progress <name.ketatlas|atlas.json> [--json] [--init]
@@ -32,7 +32,7 @@ Examples:
   npx ketatlas serve my-atlas.ketatlas
   npx ketatlas audit my-atlas.ketatlas --strict
 
-Serve binds to 127.0.0.1. No HTML wrapper, build, account, or backend required.
+Serve binds to 127.0.0.1. Static screens need no build; --renderer starts the project's declared framework server.
 `;
 function parse(args, allowed) {
   const options = {},
@@ -196,10 +196,17 @@ async function main(args) {
         port: "string",
         root: "string",
         "read-only": "boolean",
+        renderer: "boolean",
+        "html-port": "string",
       }),
-      port = Number(options.port || 4178);
+      port = Number(options.port || 4178),
+      htmlPort = Number(options["html-port"] || (port < 65535 ? port + 1 : 0));
     if (!Number.isInteger(port) || port < 1 || port > 65535)
       throw new Error("Port must be 1–65535.");
+    if (options.renderer && (!Number.isInteger(htmlPort) || htmlPort < 1 || htmlPort > 65535))
+      throw new Error("HTML port must be 1–65535.");
+    if (options.renderer && htmlPort === port)
+      throw new Error("Viewer and HTML ports must be different.");
     const directory = (await stat(resolve(target))).isDirectory();
     if (directory && options.root)
       throw new Error("--root is only needed when serving an atlas JSON file.");
@@ -210,13 +217,16 @@ async function main(args) {
             port,
             root: options.root,
             readOnly: options["read-only"],
+            renderer: options.renderer,
+            htmlPort,
           });
     console.log(
-      `KetAtlas: http://127.0.0.1:${server.address().port}\nServing ${resolve(target)}\nPress Ctrl+C to stop.`,
+      `KetAtlas: http://127.0.0.1:${server.address().port}${server.htmlOrigin ? `\nHTML: ${server.htmlOrigin}` : ""}\nServing ${resolve(target)}\nPress Ctrl+C to stop.`,
     );
-    const close = () => {
+    const close = async () => {
       server.close();
       server.closeAllConnections();
+      await server.closeRenderer?.();
     };
     process.once("SIGINT", close);
     process.once("SIGTERM", close);

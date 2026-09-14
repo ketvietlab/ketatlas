@@ -3,6 +3,7 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { validateAtlas } from "../src/config.js";
+import { readRendererConfig, rendererFileName } from "./renderer.js";
 const within = (root, path) => {
   const r = relative(root, path);
   return r === "" || (!r.startsWith(".." + sep) && r !== ".." && !r.startsWith(sep));
@@ -29,6 +30,12 @@ export async function auditAtlas(file, { root: rootOption } = {}) {
     warnings = [...result.warnings],
     checked = new Set(),
     remote = new Set();
+  let renderer;
+  try {
+    renderer = await readRendererConfig(resolve(dirname(absolute), rendererFileName));
+  } catch (error) {
+    if (error.code !== "ENOENT") errors.push({ path: rendererFileName, message: error.message });
+  }
   if (!within(root, absolute))
     errors.push({ path: "file", message: "The atlas JSON must be inside the serve root." });
   async function inspect(value, from, label) {
@@ -90,9 +97,12 @@ export async function auditAtlas(file, { root: rootOption } = {}) {
     }
   }
   if (result.valid) {
-    for (const s of config.screens || []) await inspect(s.url, absolute, `screen:${s.id}`);
+    if (!renderer)
+      for (const s of config.screens || []) await inspect(s.url, absolute, `screen:${s.id}`);
     for (const f of config.flows)
-      for (const n of f.nodes) if (n.url) await inspect(n.url, absolute, `node:${f.id}/${n.id}`);
+      for (const n of f.nodes)
+        if (n.url && (!renderer || (n.type || (n.screen ? "screen" : "note")) !== "screen"))
+          await inspect(n.url, absolute, `node:${f.id}/${n.id}`);
   }
   if (result.valid) {
     try {
@@ -118,7 +128,8 @@ export async function auditAtlas(file, { root: rootOption } = {}) {
     },
     errors,
     warnings,
-    scope:
-      "Static configuration and literal local HTML/CSS references. JavaScript behavior and remote embedding policies are not executed.",
+    scope: renderer
+      ? `Configuration and ${renderer.data.framework} renderer contract. The renderer command, routes, JavaScript behavior and embedding are not executed.`
+      : "Static configuration and literal local HTML/CSS references. JavaScript behavior and remote embedding policies are not executed.",
   };
 }

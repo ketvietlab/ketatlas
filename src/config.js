@@ -166,7 +166,7 @@ export class AtlasValidationError extends Error {
     this.errors = result.errors;
   }
 }
-export function normalizeAtlas(input, baseURL) {
+export function normalizeAtlas(input, baseURL, screenBaseURL = baseURL) {
   const result = validateAtlas(input);
   if (!result.valid) throw new AtlasValidationError(result);
   const data = structuredClone(input);
@@ -174,7 +174,7 @@ export function normalizeAtlas(input, baseURL) {
   data.viewport ??= { width: 390, height: 844 };
   data.screens ??= [];
   for (const s of data.screens) {
-    s.url = safeURL(s.url, baseURL);
+    s.url = safeURL(s.url, screenBaseURL);
     s.viewport ??= { ...data.viewport };
   }
   for (const f of data.flows) {
@@ -186,7 +186,7 @@ export function normalizeAtlas(input, baseURL) {
       n.column ??= i;
       n.row ??= 0;
       n.type ??= n.screen ? "screen" : "note";
-      if (n.url) n.url = safeURL(n.url, baseURL);
+      if (n.url) n.url = safeURL(n.url, n.type === "screen" ? screenBaseURL : baseURL);
     });
     f.edges.forEach((edge) => {
       edge.kind ??= "primary";

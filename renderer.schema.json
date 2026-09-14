@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KetAtlas native renderer configuration",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "const": 1
+    },
+    "framework": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "command": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "\\S"
+      }
+    },
+    "cwd": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "readyPath": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "screenBasePath": {
+      "type": "string",
+      "pattern": "^/.*/$|^/$"
+    },
+    "readyTimeoutMs": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 120000
+    }
+  },
+  "required": ["version", "framework", "command"],
+  "additionalProperties": false
+}

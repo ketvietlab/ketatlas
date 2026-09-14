@@ -62,6 +62,7 @@ The browser implementation has no React dependency. Instantiate it after mount; 
 | Option             | Default                                    | Purpose                                                                         |
 | ------------------ | ------------------------------------------ | ------------------------------------------------------------------------------- |
 | `baseURL`          | Page URL; JSON response URL in `loadAtlas` | Resolve screen and node URLs.                                                   |
+| `screenBaseURL`    | `baseURL`                                  | Resolve registered screens and screen-node URL overrides on another origin.     |
 | `assetBaseURL`     | Package directory                          | Public directory containing `styles/` and `assets/`; must end in `/`.           |
 | `initialFlow`      | First flow                                 | Initial flow ID.                                                                |
 | `theme`            | `light`                                    | `light` or `dark`.                                                              |
@@ -101,7 +102,9 @@ These are viewer events. KetAtlas does not inspect or synchronize navigation ins
 
 ## Embedding behavior
 
-Iframe previews are sandboxed. Scripts and forms work by default, but the page has an opaque origin: authenticated fetch, storage, some module imports, and other same-origin features can require additional permissions. Only add `allow-same-origin` for trusted prototypes. Combining it with scripts on a same-origin page weakens sandbox isolation.
+Iframe previews are sandboxed. Scripts and forms work by default, but a static page has an opaque origin: authenticated fetch, storage, some module imports, and other same-origin features can require additional permissions. Only add `allow-same-origin` for trusted prototypes. Combining it with scripts on a same-origin page weakens sandbox isolation.
+
+The CLI's native renderer mode uses `screenBaseURL` and adds `allow-same-origin` automatically. Its HTML server is a separate loopback origin from the viewer, so framework routes can use native modules and same-origin resources without gaining same-origin access to the viewer/control page.
 
 Remote pages can reject framing using CSP or `X-Frame-Options`. KetAtlas cannot override that. Use a permitted embedded route or the **Open in new tab** action. Test links/forms with the default sandbox before sharing a project.
 

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { validateAtlas, normalizeAtlas, AtlasValidationError, safeURL } from "../src/config.js";
 import { layoutAtlas, edgePath } from "../src/layout.js";
+import { validateRendererConfig } from "../bin/renderer.js";
 import Ajv from "ajv";
 const fixture = () => ({
   version: 1,
@@ -28,6 +29,35 @@ test("normalization preserves caller data, resolves URLs and applies defaults", 
   assert.equal(result.screens[0].url, "https://example.test/project/page.html");
   assert.deepEqual(result.flows[0].ends, ["b"]);
   assert.deepEqual(result.screens[0].viewport, { width: 390, height: 844 });
+});
+test("normalization can resolve framework screens on a separate origin", () => {
+  const data = normalizeAtlas(
+    {
+      version: 1,
+      title: "Native renderer",
+      screens: [{ id: "home", title: "Home", url: "./home?state=ready" }],
+      flows: [
+        {
+          id: "main",
+          title: "Main",
+          nodes: [
+            { id: "home", screen: "home" },
+            { id: "empty", screen: "home", url: "./home?state=empty" },
+            { id: "docs", title: "Docs", type: "external", url: "./docs.html" },
+          ],
+          edges: [
+            { from: "home", to: "empty", label: "Empty" },
+            { from: "empty", to: "docs", label: "Read docs" },
+          ],
+        },
+      ],
+    },
+    "http://127.0.0.1:60550/team/atlas.json",
+    "http://127.0.0.1:60551/team/",
+  );
+  assert.equal(data.screens[0].url, "http://127.0.0.1:60551/team/home?state=ready");
+  assert.equal(data.flows[0].nodes[1].url, "http://127.0.0.1:60551/team/home?state=empty");
+  assert.equal(data.flows[0].nodes[2].url, "http://127.0.0.1:60550/team/docs.html");
 });
 test("unknown IDs, duplicate nodes and grid collisions are actionable errors", () => {
   const data = fixture();
@@ -116,4 +146,21 @@ test("JSON Schema validates every shipped config and rejects misspelled fields",
   wrong.flows[0].nodes[0].col = 1;
   assert(!validate(wrong));
   assert(!validateAtlas(wrong).valid);
+});
+test("renderer JSON Schema and runtime validator agree", async () => {
+  const schema = JSON.parse(await readFile("renderer.schema.json", "utf8"));
+  const validate = new Ajv({ strict: true }).compile(schema);
+  const renderer = {
+    version: 1,
+    framework: "ketjs",
+    command: ["npm", "run", "atlas:serve", "--", "--port", "{port}"],
+    cwd: "../..",
+    readyPath: "/__atlas/ready",
+    screenBasePath: "/__atlas/customer-care/",
+  };
+  assert(validate(renderer), JSON.stringify(validate.errors));
+  assert(validateRendererConfig(renderer).valid);
+  renderer.unknown = true;
+  assert.equal(validate(renderer), false);
+  assert.equal(validateRendererConfig(renderer).valid, false);
 });

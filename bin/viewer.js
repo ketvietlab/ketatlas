@@ -5,6 +5,7 @@ import { resolve, dirname, relative, sep } from "node:path";
 import { validateAtlas, AtlasValidationError } from "../src/config.js";
 import { serve } from "./server.js";
 import { fileURLToPath } from "node:url";
+import { rendererFileName, startRenderer } from "./renderer.js";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export async function serveAtlas(file, options = {}) {
   const absolute = await realpath(resolve(file));
@@ -18,11 +19,42 @@ export async function serveAtlas(file, options = {}) {
     throw new Error("The JSON file must be inside --root.");
   const configURL = "/" + rel.split(sep).map(encodeURIComponent).join("/");
   const token = randomBytes(24).toString("hex");
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KetAtlas</title><style>html,body{margin:0;height:100%}#atlas{height:100dvh}#error{font:16px system-ui;padding:24px;white-space:pre-wrap}</style></head><body><main id="atlas"></main><pre id="error" hidden></pre><script type="module">import {loadAtlas} from '/__ketatlas__/src/index.js';try{window.atlas=await loadAtlas(document.querySelector('#atlas'),${JSON.stringify(configURL).replaceAll("<", "\\u003c")},{syncUrl:true,progressEndpoint:"/__ketatlas__/progress",progressToken:${JSON.stringify(token)}});document.title=${JSON.stringify(config.title).replaceAll("<", "\\u003c")}+' · KetAtlas';}catch(error){const el=document.querySelector('#error');el.hidden=false;el.textContent=error.message;}</script></body></html>`;
-  return serve(root, {
-    ...options,
-    viewer: html,
-    packageRoot,
-    handler: progressHandler(absolute, absolute, token, !options.readOnly),
-  });
+  let renderer;
+  if (options.renderer) {
+    const rendererFile = resolve(options.rendererFile || dirname(absolute), rendererFileName);
+    const htmlPort =
+      options.htmlPort ?? (options.port && options.port < 65535 ? options.port + 1 : 0);
+    renderer = await startRenderer(rendererFile, {
+      host: options.host,
+      port: htmlPort,
+      stdio: options.rendererStdio,
+    });
+  }
+  const loadOptions = {
+    syncUrl: true,
+    progressEndpoint: "/__ketatlas__/progress",
+    progressToken: token,
+    ...(renderer
+      ? {
+          screenBaseURL: renderer.screenBaseURL,
+          sandbox: "allow-scripts allow-forms allow-same-origin",
+        }
+      : {}),
+  };
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KetAtlas</title><style>html,body{margin:0;height:100%}#atlas{height:100dvh}#error{font:16px system-ui;padding:24px;white-space:pre-wrap}</style></head><body><main id="atlas"></main><pre id="error" hidden></pre><script type="module">import {loadAtlas} from '/__ketatlas__/src/index.js';try{window.atlas=await loadAtlas(document.querySelector('#atlas'),${JSON.stringify(configURL).replaceAll("<", "\\u003c")},${JSON.stringify(loadOptions).replaceAll("<", "\\u003c")});document.title=${JSON.stringify(config.title).replaceAll("<", "\\u003c")}+' · KetAtlas';}catch(error){const el=document.querySelector('#error');el.hidden=false;el.textContent=error.message;}</script></body></html>`;
+  try {
+    const server = await serve(root, {
+      ...options,
+      viewer: html,
+      packageRoot,
+      handler: progressHandler(absolute, absolute, token, !options.readOnly),
+    });
+    server.renderer = renderer;
+    server.htmlOrigin = renderer?.origin;
+    server.closeRenderer = () => renderer?.close();
+    return server;
+  } catch (error) {
+    await renderer?.close();
+    throw error;
+  }
 }
