@@ -14,7 +14,26 @@ The [JSON Schema](../schema.json) defines version 1. A generated project contain
 | `flows`       | Yes      | A nonempty array of workflows.                                     |
 | `$schema`     | No       | Schema URL/path for your editor.                                   |
 
-All viewer UI is English. Project titles, descriptions and labels can use any language. Search ignores case and combining accents.
+All viewer UI is English. Project titles, descriptions and labels can use any language. Search ignores case and combining accents. Workflow format version 1 remains framework-neutral; native rendering is declared in a separate sidecar.
+
+## Native renderer sidecar
+
+`atlas.renderer.json` is optional and sits beside `atlas.json`. Its [schema](../renderer.schema.json) has these fields:
+
+| Field            | Required | Default / meaning                                                   |
+| ---------------- | -------- | ------------------------------------------------------------------- |
+| `version`        | Yes      | Renderer contract version; must be `1`.                             |
+| `framework`      | Yes      | Human/tooling label such as `react`, `vue`, or `ketjs`.             |
+| `command`        | Yes      | Nonempty argv array executed directly, without a shell.             |
+| `cwd`            | No       | Working directory relative to the bundle; defaults to `.`.          |
+| `readyPath`      | No       | Origin-relative 2xx readiness route; defaults to `/`.               |
+| `screenBasePath` | No       | Origin-relative screen route prefix ending in `/`; defaults to `/`. |
+| `readyTimeoutMs` | No       | Startup timeout from 100–120000 milliseconds; defaults to 15000.    |
+| `$schema`        | No       | Schema URL/path for editor completion.                              |
+
+The command may interpolate `{host}`, `{port}`, and `{atlasDirectory}`. The corresponding environment values are `KETATLAS_HOST`, `KETATLAS_HTML_PORT`, and `KETATLAS_PROJECT_DIR`. The sidecar changes relative resolution for registered screens and screen-node URL overrides only; note/external references remain relative to `atlas.json`.
+
+`audit` validates a discovered sidecar without running it. `serve --renderer` explicitly authorizes command execution and starts the framework on `--html-port`.
 
 ## Screen
 
@@ -22,7 +41,7 @@ All viewer UI is English. Project titles, descriptions and labels can use any la
 | ------------- | -------- | --------------------------------------------------------------------- |
 | `id`          | Yes      | Unique across the atlas.                                              |
 | `title`       | Yes      | Human-readable screen name.                                           |
-| `url`         | Yes      | Relative URL or HTTP(S) URL for actual HTML.                          |
+| `url`         | Yes      | Relative or HTTP(S) URL for the actual rendered page.                 |
 | `viewport`    | No       | Overrides the atlas viewport. Both dimensions are integers, 160–4096. |
 | `description` | No       | Context inherited by its nodes.                                       |
 | `badge`       | No       | Small card footer label; defaults to `Preview`.                       |

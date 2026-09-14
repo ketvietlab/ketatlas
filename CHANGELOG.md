@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- Add an opt-in two-port native renderer contract: KetAtlas serves the viewer while the declared React, Vue, KetJS, or other framework server owns screen HTML, assets, and same-origin behavior.
+- Add `atlas.renderer.json`, its public schema, command-array validation, readiness checks, predictable renderer shutdown, and route-aware static audit.
+- Add `screenBaseURL` to the browser API so screen routes can resolve on a different origin while external references continue to resolve beside `atlas.json`.
+- Require the bundled agent skill to use the product's real framework and design-system components, share presenters/styles across atlases, and keep business data outside presentation components.
+
 ## 0.3.0
 
 - Standardize discoverable projects as `<name>.ketatlas/atlas.json` bundles, add `discover`, accept bundle directories in Atlas commands, and teach the bundled skill to backfill legacy projects safely.

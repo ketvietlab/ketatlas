@@ -32,6 +32,8 @@ for (const path of [
   "src/index.d.ts",
   "schema.json",
   "progress.schema.json",
+  "renderer.schema.json",
+  "bin/renderer.js",
   "bin/progress.js",
   "src/progress.js",
   "src/progress-ui.js",

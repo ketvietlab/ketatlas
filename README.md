@@ -1,14 +1,17 @@
 # KetAtlas
 
-**Scaffold, serve, and audit interactive HTML workflow maps.**
+**Scaffold, serve, and audit interactive framework-native workflow maps.**
 
-Turn a JSON file and your existing HTML screens into a canvas you can drag, zoom, and explore. Connect screens with labelled arrows, model decisions and recovery paths, and open the real HTML to try a step. The same tool supports mobile screens, web pages, and processes with no screens at all.
+Turn a JSON file and screens from your existing HTML, React, Vue, KetJS, or other framework into a canvas you can drag, zoom, and explore. Connect screens with labelled arrows, model decisions and recovery paths, and open the real rendered page to try a step. The same tool supports mobile screens, web pages, and processes with no screens at all.
 
-KetAtlas has an English UI, zero runtime npm dependencies, and no build step. Node.js **22+** is needed for the CLI. Viewers use native ES modules and run on an HTTP server.
+KetAtlas has an English UI and zero runtime npm dependencies. Node.js **22+** is needed for the CLI. Static projects need no build step. Framework-native projects reuse their product's own server and dependencies; KetAtlas supervises it on a separate localhost port.
 
 ## Demo
 
-See a mobile workflow map in action: explore connected screens and try the HTML prototype.
+Open the live map at **[atlas.ketsuite.com](https://atlas.ketsuite.com)**: drag, zoom, follow the
+labelled arrows, and open a real HTML prototype from any screen. Nothing to install.
+
+The same map recorded as a video, for a quick look:
 
 https://github.com/user-attachments/assets/13f24fc8-7b8e-4bda-9e02-364c120ee163
 
@@ -32,11 +35,11 @@ ketatlas serve my-atlas.ketatlas
 ketatlas audit my-atlas.ketatlas --strict
 ```
 
-The consumer bundle is named `<name>.ketatlas/` and contains `atlas.json`, its schema, product HTML/CSS/JavaScript, local assets, and documentation. The stable directory suffix lets desktop tools discover atlases without parsing unrelated JSON. A bundle needs no `package.json`, lockfile, `node_modules`, build step, or copy of the viewer. The CLI supplies scaffold, discovery, serving, and static audit from its own installation. `audit` leaves project files unchanged unless an output file is explicitly requested. Viewing with `serve` does not write; explicit **Save progress** writes the sibling progress file. Use `--read-only` to disable editing.
+The consumer bundle is named `<name>.ketatlas/` and contains `atlas.json`, its schema, documentation, and either static screen assets or an `atlas.renderer.json` sidecar. The stable directory suffix lets desktop tools discover atlases without parsing unrelated JSON. A bundle needs no KetAtlas package manifest, lockfile, `node_modules`, build step, or copy of the viewer. Framework dependencies and reusable UI stay in the product workspace, where multiple atlases can share one set of presenters, components, fixtures, and styles. The CLI supplies discovery, serving, validation, and audit. `audit` leaves project files unchanged unless an output file is explicitly requested. Viewing with `serve` does not write; explicit **Save progress** writes the sibling progress file. Use `--read-only` to disable editing.
 
-Pin the version in run commands or the global installation for reproducible team workflows. Product scripts implement mock screen interactions; they are authored content, not a local installation of KetAtlas. Framework tooling and tests stay in the KetAtlas repository.
+Pin the version in run commands or the global installation for reproducible team workflows. Product scripts implement mock screen interactions; they are authored content, not a local installation of KetAtlas. A native renderer reuses the product's framework tooling and shared UI source rather than copying markup into each atlas.
 
-Edit the JSON and screen files, then refresh the browser. The default viewer address is **http://127.0.0.1:4178**.
+Edit the JSON and product screen source, then refresh the browser. The default viewer address is **http://127.0.0.1:4178**.
 
 ## Create mockups with an agent
 
@@ -46,7 +49,31 @@ Install the KetAtlas skill in your product project:
 npx skills add ketvietlab/ketatlas --skill ketatlas
 ```
 
-Ask your agent to use the skill with a product brief: requested flows, target platforms, design references, and output directory. The agent creates actual HTML screens, a version 1 `atlas.json`, and run instructions, then audits the result.
+Ask your agent to use the skill with a product brief: requested flows, target platforms, design references, and output directory. The agent creates native framework routes (or static HTML for a static product), a version 1 `atlas.json`, and run instructions, then audits the result.
+
+## Render with the product framework
+
+KetAtlas 0.4.0 keeps the viewer and product renderer separate. Put `atlas.renderer.json` beside `atlas.json` when screens come from a framework:
+
+```json
+{
+  "$schema": "https://unpkg.com/ketatlas@0.4.0/renderer.schema.json",
+  "version": 1,
+  "framework": "vue",
+  "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
+  "cwd": "../..",
+  "readyPath": "/__atlas/ready",
+  "screenBasePath": "/__atlas/orders/"
+}
+```
+
+Then run:
+
+```sh
+npx --yes ketatlas@0.4.0 serve ./tasks/orders.ketatlas --renderer --port 60550 --html-port 60551
+```
+
+The first port serves the map and progress API. The second is owned by the declared React/Vue/KetJS/etc. server and serves screen routes. `--renderer` is explicit because it executes the local command array. Static projects continue to use the one-port command without this flag. See [Native renderers](docs/authoring.md#framework-native-screens).
 
 See [Agent mockups](docs/agent-mockups.md) for installation options, a ready-to-use request, and a reusable brief template. Agents without skill support can read the [single skill file](skills/ketatlas/SKILL.md) directly.
 
@@ -86,7 +113,7 @@ Open **Screens** to filter screen progress, review blockers and edit acceptance 
 | -------------------------- | -------------------------------------------------------------------------------- |
 | `scaffold <name.ketatlas>` | Create a bundle from `basic`, `web`, or `process`. Refuses existing content.     |
 | `discover <directory>`     | Find valid `*.ketatlas/atlas.json` bundles and report invalid bundles.           |
-| `serve <bundle\|json>`     | Start the viewer and serve local screens. Defaults to port 4178 on localhost.    |
+| `serve <bundle\|json>`     | Start the viewer; optionally supervise a native renderer on a second port.       |
 | `audit <bundle\|json>`     | Check configuration, reachability, local files, and literal HTML/CSS references. |
 | `validate <bundle\|json>`  | Validate configuration only, without reading screen files.                       |
 

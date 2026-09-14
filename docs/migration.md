@@ -1,5 +1,18 @@
 # Migrating the KétSuite mobile map
 
+## From copied HTML to a 0.4 native renderer
+
+Version 0.4 does not require static projects to change. When an atlas copied or reconstructed markup from a React, Vue, KetJS, or other framework, remove that duplicate implementation instead:
+
+1. Extract one shared screen presenter in the product's framework and compose canonical design-system components there.
+2. Keep business loaders and Atlas fixtures separate; pass both into the same presenter shape.
+3. Reuse that presenter and its styles across all atlases in the workspace.
+4. Add namespaced Atlas routes and `atlas.renderer.json` beside each manifest.
+5. Change screen URLs to paths relative to the declared `screenBasePath`.
+6. Run `ketatlas@0.4.0 audit`, then use `serve --renderer` and verify both origins in a browser.
+
+Do not migrate to a JSON component tree or another generated HTML layer. The framework component remains the screen source of truth.
+
 ## Bundle layout backfill
 
 Current projects use `<name>.ketatlas/atlas.json`. For a legacy self-contained Atlas directory, rename the whole directory so relative screen, style and asset URLs remain unchanged. When `atlas.json` shares a directory with unrelated application code, create a sibling `<name>.ketatlas` bundle, move only Atlas-owned files, and update relative URLs for resources that intentionally remain outside it. Keep one canonical manifest, then run `ketatlas discover <workspace> --json`, `ketatlas validate <name>.ketatlas`, and `ketatlas audit <name>.ketatlas --strict`.

@@ -2,7 +2,7 @@
 
 Install once with `npm install --global ketatlas`, or prefix commands with `npx --yes ketatlas`. No dependency installation is required in the consumer directory. `node /path/to/ketatlas/bin/ketatlas.js` is also available to framework maintainers.
 
-A consumer keeps only its JSON/schema, product HTML/CSS/JavaScript, assets, and documentation. The package manifest, lockfile, development scripts, and browser test dependencies belong to the tool. Normal `serve`, `validate`, and `audit` calls do not create files in the consumer; `audit --output` is an explicit exception.
+A consumer keeps its JSON/schema, documentation, and either static product assets or a native renderer sidecar. KetAtlas package files and browser test dependencies belong to the tool; framework package files remain in the product workspace. Normal `serve`, `validate`, and `audit` calls do not create files in the consumer; `audit --output` is an explicit exception.
 
 ## Scaffold
 
@@ -32,6 +32,7 @@ Legacy manifest paths remain valid command arguments, but discovery intentionall
 ```sh
 ketatlas serve ./tasks/onboarding.ketatlas
 ketatlas serve ./tasks/onboarding.ketatlas --port 4180
+ketatlas serve ./tasks/onboarding.ketatlas --renderer --port 60550 --html-port 60551
 ketatlas serve ./legacy/atlas.json --root .
 ```
 
@@ -40,6 +41,14 @@ The tool supplies the viewer page. It validates the JSON at startup, serves your
 Open the printed localhost URL. Changes appear after refreshing; there is no hot reload or authoring server state. Use `?flow=your-flow-id` or `?screen=your-screen-id` to open a specific part of the map. An unknown ID falls back to the first flow.
 
 The `/__ketatlas__/` route is reserved for viewer assets. Dotfiles and paths resolving outside the file root, including symlink escapes, are not served. Only GET/HEAD are supported. The server binds to `127.0.0.1`; it is a local preview server, not a production application server.
+
+### Native renderer mode
+
+`--renderer` reads `atlas.renderer.json` beside the manifest and executes its command array without a shell. This is opt-in because the project controls the command. The renderer gets `KETATLAS_HOST`, `KETATLAS_HTML_PORT`, and `KETATLAS_PROJECT_DIR`; command arguments can also use `{host}`, `{port}`, and `{atlasDirectory}` placeholders.
+
+`--port` selects the viewer/control origin. `--html-port` selects the separate framework renderer origin and defaults to the following port. The ports must differ. KetAtlas waits for the configured `readyPath`, resolves relative screen URLs beneath `screenBasePath`, prints both origins, and terminates the renderer when the viewer receives SIGINT or SIGTERM.
+
+The second origin lets trusted React/Vue/KetJS routes load their own modules, styles, assets, and same-origin requests while remaining isolated from the viewer origin. A shared product renderer can serve namespaced routes for several atlas bundles so they reuse the same presenters and styles.
 
 `serve <directory>` also works as a plain static preview for an existing HTML integration. JSON mode is recommended for project planning.
 
@@ -60,8 +69,9 @@ Audit checks:
 - Local screen files and node URL overrides, using the same root boundary as the server.
 - Literal resource references in HTML (`src`/`href`), links between HTML pages, and CSS imports/URLs.
 - A viewport meta tag in HTML previews.
+- A colocated native renderer contract when present. Its screen paths are treated as framework routes rather than local files.
 
-Remote URLs are reported but not fetched. Audit does not execute JavaScript, discover dynamic imports/URLs, validate remote CSP or `X-Frame-Options`, simulate user actions, or verify backend/native behavior. Use your project's browser tests for those checks.
+Remote URLs are reported but not fetched. Audit does not execute renderer commands or JavaScript, discover dynamic imports/URLs, validate remote CSP or `X-Frame-Options`, simulate user actions, or verify backend/native behavior. Use the two-port preview and your project's browser tests for those checks.
 
 Exit codes:
 

@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { serve } from "../bin/server.js";
 import { serveAtlas } from "../bin/viewer.js";
+import { validateRendererConfig } from "../bin/renderer.js";
 import { auditAtlas } from "../bin/audit.js";
 import { discoverAtlases } from "../bin/discovery.js";
 const cli = resolve("bin/ketatlas.js");
@@ -155,4 +156,95 @@ test("static server blocks symlink escapes and dotfiles; handles MIME, HEAD and 
     await new Promise((r) => server.close(r));
     await rm(temp, { recursive: true, force: true });
   }
+});
+
+test("framework renderer uses a second origin and rewrites only screen routes", async () => {
+  const temp = await mkdtemp(join(tmpdir(), "ketatlas-renderer-"));
+  const target = join(temp, "shared-ui.ketatlas");
+  await mkdir(target);
+  await writeFile(
+    join(target, "atlas.json"),
+    JSON.stringify({
+      version: 1,
+      title: "Shared UI",
+      screens: [{ id: "home", title: "Home", url: "./home?state=ready" }],
+      flows: [
+        {
+          id: "main",
+          title: "Main",
+          nodes: [{ id: "home", screen: "home" }],
+          edges: [],
+        },
+      ],
+    }),
+  );
+  await writeFile(
+    join(temp, "renderer.mjs"),
+    `import {createServer} from "node:http";
+const port=Number(process.env.KETATLAS_HTML_PORT);
+createServer((req,res)=>{res.setHeader("content-type","text/html");res.end("<!doctype html><meta name=viewport content='width=device-width'><h1>Native "+req.url+"</h1>")}).listen(port,"127.0.0.1");`,
+  );
+  await writeFile(
+    join(target, "atlas.renderer.json"),
+    JSON.stringify({
+      version: 1,
+      framework: "test-server",
+      command: [process.execPath, "{atlasDirectory}/../renderer.mjs"],
+      readyPath: "/health",
+      screenBasePath: "/shared/",
+    }),
+  );
+  const report = await auditAtlas(join(target, "atlas.json"));
+  assert.equal(report.valid, true, JSON.stringify(report));
+  assert.equal(report.summary.localFiles, 0);
+  assert.match(report.scope, /test-server renderer contract/);
+  const server = await serveAtlas(join(target, "atlas.json"), {
+    port: 0,
+    renderer: true,
+    htmlPort: 0,
+    rendererStdio: "ignore",
+  });
+  try {
+    assert(server.htmlOrigin);
+    assert.notEqual(server.address().port, Number(new URL(server.htmlOrigin).port));
+    const viewer = await (await fetch(`http://127.0.0.1:${server.address().port}`)).text();
+    assert(viewer.includes(`${server.htmlOrigin}/shared/`));
+    assert(viewer.includes("allow-same-origin"));
+    const page = await (await fetch(`${server.htmlOrigin}/shared/home?state=ready`)).text();
+    assert.match(page, /Native \/shared\/home\?state=ready/);
+  } finally {
+    server.closeAllConnections();
+    await new Promise((done) => server.close(done));
+    await server.closeRenderer();
+    await rm(temp, { recursive: true, force: true });
+  }
+});
+
+test("renderer contract rejects shell strings and malformed paths", () => {
+  assert.equal(
+    validateRendererConfig({ version: 1, framework: "react", command: ["npm", "run", "dev"] })
+      .valid,
+    true,
+  );
+  const result = validateRendererConfig({
+    version: 1,
+    framework: "vue",
+    command: "npm run dev",
+    screenBasePath: "/missing-trailing-slash",
+  });
+  assert.equal(result.valid, false);
+  assert(result.errors.some((issue) => issue.path === "command"));
+  assert(result.errors.some((issue) => issue.path === "screenBasePath"));
+});
+
+test("bundled skill requires native and shared framework implementations", async () => {
+  const skill = await readFile("skills/ketatlas/SKILL.md", "utf8");
+  for (const requirement of [
+    "React components render through the product's React runtime",
+    "Vue components render through the product's Vue runtime",
+    "KetJS server components render on a KetJS server",
+    "Never copy shared component or style files from one atlas to another",
+    "npx --yes ketatlas@0.4.0 serve",
+  ])
+    assert(skill.includes(requirement), requirement);
 });

@@ -1,6 +1,7 @@
 import { readFile, writeFile, cp, mkdir } from "node:fs/promises";
 const root = new URL("../", import.meta.url);
 const file = (p) => new URL(p, root);
+const packageVersion = JSON.parse(await readFile(file("package.json"), "utf8")).version;
 await mkdir(file("templates/basic"), { recursive: true });
 await cp(file("starter/screens"), file("templates/basic/screens"), { recursive: true });
 const basic = JSON.parse(await readFile(file("starter/atlas.json"), "utf8"));
@@ -43,7 +44,7 @@ for (const name of ["basic", "web", "process"]) {
   }
   await writeFile(
     file(`templates/${name}/README.md`),
-    `# My KetAtlas project\n\nThis directory must keep its \x60.ketatlas\x60 suffix. Run with Node.js 22 or newer:\n\n\x60\x60\x60sh\nnpx ketatlas serve .\nnpx ketatlas audit . --strict\n\x60\x60\x60\n\nEdit \x60atlas.json\x60 to change nodes, edges, and screen URLs. Screen URLs are relative to that file. Refresh the browser after editing. No wrapper HTML, package manifest, lockfile, node_modules, or build step is needed. Alternatively, install the CLI once with npm install --global ketatlas and use ketatlas serve .\n\n${name === "process" ? "This template models a process without HTML screens. Add a screen registry and screen nodes when needed." : "Edit the HTML files in screens/ to replace the sample product. styles/design-system.css is generated from the pinned KetJS design system; do not manually fork its tokens."}\n\nOpen **Screens** in the viewer to review or edit delivery progress. Saving writes atlas.progress.json beside the workflow; use --read-only to disable editing. You can initialize records with ketatlas progress . --init. Keep this directory in your own project repository. The schema provides editor completion. See https://github.com/ketvietlab/ketatlas for the full API, CLI, and configuration reference.\n`,
+    `# My KetAtlas project\n\nThis directory must keep its \x60.ketatlas\x60 suffix. Run with Node.js 22 or newer:\n\n\x60\x60\x60sh\nnpx --yes ketatlas@${packageVersion} serve .\nnpx --yes ketatlas@${packageVersion} audit . --strict\n\x60\x60\x60\n\nThis starter is intentionally static. Edit \x60atlas.json\x60 to change nodes, edges, and screen URLs. Screen URLs are relative to that file. Refresh the browser after editing. No wrapper HTML, package manifest, lockfile, node_modules, or build step is needed. For React, Vue, KetJS, or another framework, use atlas.renderer.json and shared framework presenters instead of copying this static implementation.\n\n${name === "process" ? "This template models a process without HTML screens. Add a screen registry and screen nodes when needed." : "Edit the HTML files in screens/ to replace the sample static product. styles/design-system.css is generated from the pinned KetJS design system; do not manually fork its tokens."}\n\nOpen **Screens** in the viewer to review or edit delivery progress. Saving writes atlas.progress.json beside the workflow; use --read-only to disable editing. You can initialize records with npx --yes ketatlas@${packageVersion} progress . --init. Keep this directory in your own project repository. The schema provides editor completion. See https://github.com/ketvietlab/ketatlas for the full API, CLI, and configuration reference.\n`,
   );
 }
 console.log("Prepared basic, web, and process templates.");

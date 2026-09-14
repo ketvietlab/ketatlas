@@ -1,26 +1,34 @@
 # Architecture
 
-KetAtlas is a static browser viewer plus a Node.js command-line toolkit. There is no database, account service or runtime npm dependency. The localhost CLI has a narrow, protected API to read and save the progress sidecar; static hosting remains read-only.
+KetAtlas is a browser viewer plus a Node.js command-line orchestrator. There is no database, account service or runtime npm dependency. Static screens can still use the built-in file server. Framework-native screens run through the product's own server on a second loopback origin, preserving the component implementation as the single source of truth. The localhost CLI has a narrow, protected API to read and save the progress sidecar; static hosting remains read-only.
 
 ```text
-<name>.ketatlas/atlas.json + screen HTML
+<name>.ketatlas/atlas.json
         │
         ├── discover → workspace bundle catalog
         ├── validate / audit → diagnostics and CI exit code
-        │
-        └── serve → built-in viewer page
-                       │
-                       ├── config validation + URL resolution
-                       ├── deterministic grid layout
-                       ├── Shadow DOM shell + SVG edges
-                       └── lazy HTML iframes + interactive inspector
+        └── serve → viewer/control origin
+                       ├── config validation + deterministic map
+                       ├── progress API + Shadow DOM viewer
+                       └── lazy iframes
+                              ├── static files on the viewer origin, or
+                              └── native framework renderer origin
+                                      └── shared presenters + Atlas fixtures
 ```
 
 ## Consumer boundary
 
-KetAtlas is installed globally or executed through npx. Consumers provide a `<name>.ketatlas/` bundle containing JSON, a schema, HTML/CSS/JavaScript mock screens, assets, and documentation. The suffix is the discovery boundary: tools inspect only its direct `atlas.json`, not arbitrary workspace JSON. Consumers do not need a Node package, lockfile, development dependencies, viewer implementation, or build/test scripts to scaffold, discover, serve, or audit a map.
+KetAtlas is installed globally or executed through npx. Consumers provide a `<name>.ketatlas/` bundle containing JSON, a schema, documentation, and either static mock screens or `atlas.renderer.json`. The suffix is the discovery boundary: tools inspect only its direct `atlas.json`, not arbitrary workspace JSON. Consumers do not need a KetAtlas package, lockfile, development dependencies, viewer implementation, or build/test scripts. A native renderer deliberately reuses the product's existing framework package and lockfile outside the bundle.
 
-The package owns the CLI, viewer, validation, and framework verification. A product may have its own application tests elsewhere; those are independent of the map format. Static audit does not simulate product interactions. Agent browser checks can run through external tooling without adding a test harness to the delivered atlas folder.
+The package owns the CLI, viewer, validation, renderer supervision, and contract verification. The product owns screen markup, components, styles, fixtures, and framework tests. Static audit does not execute renderer commands or simulate product interactions. Agent browser checks can run through external tooling without adding a test harness to the delivered atlas folder.
+
+## Native renderer boundary
+
+`atlas.renderer.json` declares a framework label, an argv array, a working directory, readiness route, and screen base path. It is separate from `atlas.json`: workflow format version 1 remains framework-neutral. `serve --renderer` is required to execute the command, making local code execution explicit. KetAtlas substitutes host/port tokens, waits for a 2xx readiness response, and terminates the renderer with the viewer.
+
+The viewer and renderer use different loopback origins. Relative screen and screen-node URLs resolve against `screenBasePath` on the renderer origin. Relative external/note references still resolve beside `atlas.json`. Renderer iframes receive `allow-same-origin` because the separate origin prevents access to the viewer while enabling native module loading, assets, storage, and same-origin requests.
+
+Multiple atlases should share one framework renderer source. Shared design-system compositions, presenters, fixture factories, and styles live in one product module; each atlas selects namespaced routes through `screenBasePath` and owns only its flow/state declarations. The core does not define a component DSL or translate component trees.
 
 ## Ownership
 
@@ -45,7 +53,7 @@ Flows are stacked on one canvas. A row and column grow to fit their largest node
 
 Camera changes use an animation frame and a CSS transform. Drag, wheel, keyboard and pinch input use shared accelerated motion constants while zoom remains anchored under the pointer. Only the nearest visible screen cards receive iframes, up to the configured cap. Below the preview threshold, all cards show placeholders. This limits embedded-page cost; every node and edge still has a DOM element. There is no claim of unlimited graph size.
 
-The inspector reuses the same screen URL at its declared viewport dimensions, with no extra side padding. Its iframe is removed when closed. Reopening a screen loads a fresh instance; editing a prototype is not persistent business state.
+The inspector reuses the same screen URL at its declared viewport dimensions, with no extra side padding. Its iframe is removed when closed. Reopening a screen loads a fresh instance; editing a prototype is not persistent business state. Framework rendering and business simulation remain inside the renderer, never the viewer.
 
 ## Isolation and lifecycle
 
@@ -61,7 +69,7 @@ The default theme uses Inter and KetJS's canonical tokens and primitives. `prepa
 
 ## Version 1 boundaries
 
-KetAtlas is a viewer and authoring toolkit, not a visual graph editor. Users edit JSON and HTML in their normal tools. It does not record a graph by watching clicks, synthesize screens, calculate backend permissions, or execute the arrow graph as an automated test. Cross-flow edges, collaborative editing and browser-based project audits are outside the current contract.
+KetAtlas is a viewer and authoring toolkit, not a visual graph editor. Users edit JSON and product framework source in their normal tools. It does not record a graph by watching clicks, synthesize screens, translate React/Vue/KetJS components, calculate backend permissions, or execute the arrow graph as an automated test. Cross-flow edges, collaborative editing and browser-based project audits are outside the current contract.
 
 ## Delivery tracking
 

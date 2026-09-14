@@ -140,7 +140,7 @@ test("local writes are explicit, conflict-safe, validated and shared with CLI; s
     server = await serveAtlas(file, { port: 0 });
     const origin = `http://127.0.0.1:${server.address().port}`;
     const html = await (await fetch(origin)).text();
-    const token = html.match(/progressToken:"([a-f0-9]+)"/)[1];
+    const token = html.match(/"?progressToken"?:\s*"([a-f0-9]+)"/)[1];
     const url = origin + "/__ketatlas__/progress";
     assert.equal((await (await fetch(url)).json()).revision, "missing");
     const put = (record, revision, extra = {}) =>

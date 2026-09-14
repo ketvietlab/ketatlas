@@ -1,11 +1,11 @@
 ---
 name: ketatlas
-description: Create or update interactive HTML mockups and workflow maps in KetAtlas format. Use when a user requests KetAtlas output, an atlas.json project, or draggable flows connecting real HTML screens; also use to scaffold, serve, or audit an existing atlas.
+description: Create or update interactive framework-native mockups and workflow maps in KetAtlas format. Use when a user requests KetAtlas output, an atlas.json project, or draggable flows connecting screens rendered by HTML, React, Vue, KetJS, or another product framework; also use to scaffold, serve, or audit an existing atlas.
 ---
 
 # KetAtlas
 
-Deliver an editable `<name>.ketatlas/` bundle containing actual HTML screens and a version 1 `atlas.json` that `npx ketatlas serve` can open. KetAtlas supplies the draggable viewer; the agent authors the product mockups and their flow graph. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
+Deliver an editable `<name>.ketatlas/` bundle with a version 1 `atlas.json` that `npx ketatlas@0.4.0 serve` can open. KetAtlas supplies the draggable viewer; the selected product framework owns screen rendering. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
 
 ## Read the brief and choose the scope
 
@@ -32,25 +32,68 @@ Before scaffolding or editing visual screens, ask the user to choose a design sy
 
 Do not start visual screen implementation until the user answers. If the user explicitly delegates the choice to the agent, treat that as **Auto**. This selection prompt is still required for an existing atlas; its documented/current system may be offered as the likely choice. A request that already names a system or supplies a design-system source counts as an answer and must not be asked again.
 
-Inspect the selected source, its usage documentation, tokens, components, icons, and relevant product patterns before mocking. Reuse its actual public assets and composition patterns when available; do not merely imitate its color palette. Replace incompatible starter styling rather than layering multiple design systems. For one shared iOS/Android prototype, create one HTML implementation with reusable styles and states unless separate variants were requested.
+Inspect the selected source, its usage documentation, tokens, components, icons, relevant product patterns, and implementation framework before mocking. Reuse its actual public components, assets, and composition patterns when available; do not merely imitate its color palette. Replace incompatible starter styling rather than layering multiple design systems. For one shared iOS/Android prototype, create one framework implementation with reusable presenters and states unless separate variants were requested.
 
-Prefer a local adapter descriptor with `schemaVersion: "ketatlas.design-system-adapter.v1"` when the selected design system provides one. Discover it from the user-supplied path, a repository `design-system.atlas.json`, or the package's documented `./atlas/profile.json` export. Read the descriptor before using its assets or commands; do not assume capabilities it does not declare. If there is no adapter, use the design system through its documented HTML/CSS interface and record that no reproducible adapter lock is available.
+Prefer a local adapter descriptor with `schemaVersion: "ketatlas.design-system-adapter.v1"` when the selected design system provides one. Discover it from the user-supplied path, a repository `design-system.atlas.json`, or the package's documented `./atlas/profile.json` export. Read the descriptor before using its assets or commands; do not assume capabilities it does not declare. If there is no adapter, use the design system through its documented native framework interface and record that no reproducible adapter lock is available.
 
 For Két Design System, prefer the descriptor exported at `@ketvietlab/design-system/atlas/profile.json` and its declared `ket-design-system-atlas` materializer. Read that descriptor for asset names, root attributes, slots, hooks, and state ownership instead of hard-coding them.
 
-Keep the atlas self-contained and dependency-free. Do not add a consumer package installation or custom bundler just to use a design system. Materialize or copy permitted static assets only when the selected source supports it, preserve required notices, and do not rely on remote runtime assets when the requested mockup must work offline. Record the selected system, source URL/path, pinned version or commit when known, adapter/asset strategy, and any license or fidelity limitation in the bundle README.
+## Use the product's native framework
+
+Inspect the product and selected design-system source before choosing how screens render. Match their implementation framework exactly:
+
+- React components render through the product's React runtime and routes.
+- Vue components render through the product's Vue runtime and routes.
+- KetJS server components render on a KetJS server. Do not reconstruct their output with client-side DOM builders or handwritten HTML strings.
+- Apply the equivalent rule to any other declared framework. Use static HTML only when the product is actually static HTML, no framework exists, or the user explicitly requests static HTML.
+
+Choose the existing product framework first. If there is no product implementation yet, use the selected design system's canonical framework. If neither declares a framework, static HTML is the fallback. Preserve the rendering model as well as the library name: server components must render on their server, while client components remain native client components. If the product and design system require incompatible frameworks and no documented adapter exists, pause for a design-system/framework decision instead of translating either implementation.
+
+Do not create a second component representation for Atlas. In particular, do not translate framework components into a KetAtlas-specific component JSON DSL, duplicate their markup in `screens/`, or imitate them with local CSS. Fix an incorrect canonical design-system component or adapter at its source before continuing; do not hide the mismatch in an Atlas-only override.
+
+Separate screen presentation from business behavior. A screen presenter receives a deterministic view model and composes the real design-system components. Atlas routes call that presenter with fixtures; production routes call the same presenter with real data, permissions, and actions. Atlas may select fixture states through routes or query parameters, but it does not own product markup.
+
+When a workspace contains multiple atlases, put reusable presenters, component compositions, fixture factories, tokens, and Atlas route helpers in one shared framework module outside the individual `.ketatlas` bundles. Each bundle owns only its flow graph, per-atlas fixture/state declarations, renderer sidecar, and documentation. Never copy shared component or style files from one atlas to another. Prefer one native renderer application that exposes namespaced `screenBasePath` routes for all atlases.
+
+Keep static atlas bundles self-contained and dependency-free. For framework-native atlases, reuse the product's existing package manifest, lockfile, framework server, and shared UI source outside the atlas bundle; do not add another package installation or bundler inside `.ketatlas`. Materialize or copy permitted assets only for a genuinely static product. Record the selected system, implementation framework, shared module location, source URL/path, pinned version or commit when known, adapter strategy, and any license or fidelity limitation in the bundle README.
+
+### Declare the native renderer
+
+Place `atlas.renderer.json` beside `atlas.json`. This sidecar is the executable renderer contract and does not change the version 1 workflow schema. Use an argument array, never a shell command string:
+
+```json
+{
+  "$schema": "https://unpkg.com/ketatlas@0.4.0/renderer.schema.json",
+  "version": 1,
+  "framework": "react",
+  "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
+  "cwd": "../..",
+  "readyPath": "/__atlas/ready",
+  "screenBasePath": "/__atlas/customer-care/"
+}
+```
+
+`cwd` is relative to the bundle. KetAtlas substitutes `{host}`, `{port}`, and `{atlasDirectory}` and also provides `KETATLAS_HOST`, `KETATLAS_HTML_PORT`, and `KETATLAS_PROJECT_DIR`. `readyPath` must return HTTP 2xx when the framework server is ready. `screenBasePath` is origin-relative and ends in `/`; screen URLs in `atlas.json` resolve beneath it. Multiple atlases may use the same command and shared renderer source while choosing different namespaced base paths.
+
+Start the viewer and HTML renderer on separate loopback ports:
+
+```sh
+npx --yes ketatlas@0.4.0 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
+```
+
+`--renderer` is an explicit trust boundary because it executes the declared local command. The viewer remains on the first port; framework HTML, scripts, styles, assets, and same-origin requests stay on the second. Do not proxy or rebuild framework output in the viewer process.
 
 ## Scaffold or extend
 
 Node.js 22 or newer is required. For a new, empty destination:
 
 ```sh
-npx --yes ketatlas scaffold ./tasks/mockups.ketatlas --template basic
+npx --yes ketatlas@0.4.0 scaffold ./tasks/mockups.ketatlas --template basic
 ```
 
 Choose `basic` for mobile, `web` for desktop, or `process` for steps without UI. These are starting examples, not required product flows. Replace their sample content with the requested product.
 
-For an existing atlas, read and edit its JSON and screen files directly. Preserve useful IDs and URLs; scaffold refuses a nonempty directory and has no `--force` option. Pin the CLI version in the README commands or use a global installation. A consumer atlas does not need a local package installation.
+For an existing atlas, read its JSON, renderer contract, and referenced framework source or static screen files. Preserve useful IDs and URLs; scaffold refuses a nonempty directory and has no `--force` option. Pin the CLI version in the README commands or use a global installation. A consumer atlas does not need a local KetAtlas installation.
 
 ### Backfill legacy projects
 
@@ -75,7 +118,9 @@ tasks/mockups.ketatlas/
   README.md                Run commands, flow coverage, assumptions, verification
 ```
 
-Keep product assets inside the served directory when practical. Deliver JSON/schema, screen HTML/CSS/JavaScript, assets, and documentation. Do not scaffold a `package.json`, lockfile, `node_modules`, asset build scripts, or a copied viewer/test harness in the atlas folder just to use KetAtlas. The installed CLI supplies scaffold, serve, validate, and audit. Browser verification can use the agent's external tooling. Preserve unrelated application tooling when extending an existing repository.
+A framework-native bundle replaces `screens/` and copied styles with `atlas.renderer.json`; its actual routes, shared presenters, fixtures, and styles stay in the product's framework source. Multiple bundles should point to the same shared renderer module instead of growing parallel component implementations.
+
+For static mode, keep product assets inside the served directory when practical. For native mode, deliver JSON/schema, `atlas.renderer.json`, per-atlas fixtures or declarations, and documentation while changing shared framework source in its owning product module. Do not scaffold a `package.json`, lockfile, `node_modules`, asset build scripts, or a copied viewer/test harness in the atlas folder just to use KetAtlas. The installed CLI supplies scaffold, serve, validate, and audit. Browser verification can use the agent's external tooling. Preserve unrelated application tooling when extending an existing repository.
 
 Do not create a wrapper viewer or a custom canvas: `serve ./tasks/mockups.ketatlas` provides it.
 
@@ -97,7 +142,7 @@ Core rules:
 - Set `column` and `row` explicitly for branches. Both are integers from 0 to 100; no two nodes in a flow share a cell. This is a grid, not an automatic graph layout engine.
 - Set the atlas `viewport` or a screen override to the intended layout size. The mobile default is 390 × 844; choose desktop dimensions from the brief. Width and height are integers from 160 to 4096.
 
-Example structure, to adapt to the actual product and HTML files:
+Example static structure; for native routes, replace the `.html` paths with paths relative to `screenBasePath`:
 
 ```json
 {
@@ -144,22 +189,24 @@ Example structure, to adapt to the actual product and HTML files:
 
 ## Build the actual screens
 
-Make each screen a complete HTML document with a viewport meta tag and `body { margin: 0; }`. Keep product content padding, but do not wrap the page in a second phone bezel, presentation frame, reviewer sidebar, or outer mockup margin. The iframe is the screen boundary.
+For static HTML mode, make each screen a complete HTML document with a viewport meta tag and `body { margin: 0; }`. For framework-native mode, make every declared screen URL a directly addressable framework route whose response is a complete document at the selected state. Keep product content padding, but do not wrap the page in a second phone bezel, presentation frame, reviewer sidebar, or outer mockup margin. The iframe is the screen boundary.
 
-Use shared CSS/components and deterministic mock data. States referenced by node URLs must render directly when opened or refreshed, without requiring a previous login or click. Implement the relevant buttons, forms, validation feedback, and navigation in HTML/JavaScript: graph arrows do not wire screen interactions automatically.
+Use the shared framework presenters/styles and deterministic fixtures. States referenced by node URLs must render directly when opened or refreshed, without requiring a previous login or click. Implement the relevant buttons, forms, validation feedback, and navigation in the native framework: graph arrows do not wire screen interactions automatically.
 
-The default iframe sandbox allows scripts and forms but gives the page an opaque origin. Prefer ordinary links, classic scripts, inline mock data, URL parameters, and in-memory state for portable prototypes. Storage, authenticated fetch, and some module imports can fail in this sandbox. Test in **Try this screen**, not just a standalone tab; do not solve a prototype issue by weakening the viewer's sandbox.
+Static screens use an opaque sandbox by default. Native renderer mode places screens on a distinct origin and enables `allow-same-origin` there so framework modules and same-origin assets work without granting access to the viewer origin. Keep framework routes trusted and loopback-only. Test in **Try this screen**, not just a standalone tab.
 
 ## Validate and hand off
 
 Run from the user's project with the same root for audit and serve:
 
 ```sh
-npx --yes ketatlas discover . --json
-npx --yes ketatlas validate ./tasks/mockups.ketatlas
-npx --yes ketatlas audit ./tasks/mockups.ketatlas --strict
-npx --yes ketatlas serve ./tasks/mockups.ketatlas
+npx --yes ketatlas@0.4.0 discover . --json
+npx --yes ketatlas@0.4.0 validate ./tasks/mockups.ketatlas
+npx --yes ketatlas@0.4.0 audit ./tasks/mockups.ketatlas --strict
+npx --yes ketatlas@0.4.0 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
 ```
+
+Omit `--renderer` and `--html-port` only for a genuinely static atlas. Audit validates a discovered `atlas.renderer.json` and treats screen URLs as framework routes, but deliberately does not execute the command. The browser check must therefore prove the ready route, every requested screen state, framework scripts/styles, and important interactions through the two-port viewer.
 
 Use `--root .` on both audit and serve if screens or assets intentionally live outside the atlas directory but inside the project. Use `--port 4180` or another free port when necessary. Refresh after file edits; there is no hot reload.
 
