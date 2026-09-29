@@ -1,0 +1,43 @@
+KetAtlas Proprietary License
+Copyright (c) 2026 KET VIET JSC, VN. All rights reserved.
+
+This license applies to KetAtlas releases starting with version 0.4.1.
+
+1. Permission to use
+You may download, install, and run the official, unmodified KetAtlas build
+for personal, internal business, and commercial use. No source-code access
+or ownership is granted.
+
+2. Restrictions
+Except as expressly permitted below or required by applicable law, you may
+not modify, redistribute, sublicense, sell, or create derivative works of
+KetAtlas itself. You may not publish its implementation source or present
+modified builds as official KetAtlas releases. Separate written permission
+from KET VIET JSC, VN is required for redistribution of the runtime.
+
+3. User content and authoring materials
+You retain all rights to your own atlas data and product screen content.
+You may use, copy, modify, and distribute the supplied templates, JSON
+schemas, TypeScript declarations, documentation, and agent skill to create,
+validate, document, and share your own projects. This permission does not
+extend to the KetAtlas CLI or browser runtime, and does not grant trademark
+rights. Sharing an atlas does not require transferring its ownership.
+
+4. Third-party components and earlier releases
+Third-party components remain governed by their respective licenses listed
+in NOTICE.md and the accompanying license files. These terms do not limit
+rights granted under those licenses. Earlier KetAtlas releases remain
+subject to the license shipped with those releases.
+
+5. Disclaimer
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, AND NONINFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE
+COPYRIGHT HOLDER SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
+
+6. Termination
+Permission under this license ends if you violate its terms. Upon
+termination, stop using and delete your copies of the KetAtlas runtime.
+Rights to your own content and rights under independent third-party
+licenses are unaffected.
