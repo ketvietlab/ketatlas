@@ -5,7 +5,7 @@ description: Create or update interactive framework-native mockups and workflow 
 
 # KetAtlas
 
-Deliver an editable `<name>.ketatlas/` bundle with a version 1 `atlas.json` that `npx ketatlas@0.4.1 serve` can open. KetAtlas supplies the draggable viewer; the selected product framework owns screen rendering. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
+Deliver an editable `<name>.ketatlas/` bundle with a version 1 `atlas.json` that `npx ketatlas@0.4.2 serve` can open. KetAtlas supplies the draggable viewer; the selected product framework owns screen rendering. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
 
 ## Read the brief and choose the scope
 
@@ -63,7 +63,7 @@ Place `atlas.renderer.json` beside `atlas.json`. This sidecar is the executable 
 
 ```json
 {
-  "$schema": "https://unpkg.com/ketatlas@0.4.1/renderer.schema.json",
+  "$schema": "https://unpkg.com/ketatlas@0.4.2/renderer.schema.json",
   "version": 1,
   "framework": "react",
   "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
@@ -78,7 +78,7 @@ Place `atlas.renderer.json` beside `atlas.json`. This sidecar is the executable 
 Start the viewer and HTML renderer on separate loopback ports:
 
 ```sh
-npx --yes ketatlas@0.4.1 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.4.2 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 `--renderer` is an explicit trust boundary because it executes the declared local command. The viewer remains on the first port; framework HTML, scripts, styles, assets, and same-origin requests stay on the second. Do not proxy or rebuild framework output in the viewer process.
@@ -88,7 +88,7 @@ npx --yes ketatlas@0.4.1 serve ./tasks/mockups.ketatlas --renderer --port 60550 
 Node.js 22 or newer is required. For a new, empty destination:
 
 ```sh
-npx --yes ketatlas@0.4.1 scaffold ./tasks/mockups.ketatlas --template basic
+npx --yes ketatlas@0.4.2 scaffold ./tasks/mockups.ketatlas --template basic
 ```
 
 Choose `basic` for mobile, `web` for desktop, or `process` for steps without UI. These are starting examples, not required product flows. Replace their sample content with the requested product.
@@ -200,10 +200,10 @@ Static screens use an opaque sandbox by default. Native renderer mode places scr
 Run from the user's project with the same root for audit and serve:
 
 ```sh
-npx --yes ketatlas@0.4.1 discover . --json
-npx --yes ketatlas@0.4.1 validate ./tasks/mockups.ketatlas
-npx --yes ketatlas@0.4.1 audit ./tasks/mockups.ketatlas --strict
-npx --yes ketatlas@0.4.1 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.4.2 discover . --json
+npx --yes ketatlas@0.4.2 validate ./tasks/mockups.ketatlas
+npx --yes ketatlas@0.4.2 audit ./tasks/mockups.ketatlas --strict
+npx --yes ketatlas@0.4.2 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 Omit `--renderer` and `--html-port` only for a genuinely static atlas. Audit validates a discovered `atlas.renderer.json` and treats screen URLs as framework routes, but deliberately does not execute the command. The browser check must therefore prove the ready route, every requested screen state, framework scripts/styles, and important interactions through the two-port viewer.

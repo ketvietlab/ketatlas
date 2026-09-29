@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.2
+
+- Point npm repository and homepage metadata to the public documentation repository.
+- Use explicit public URLs for README documentation, skill, license, and notice links so they work on npm and GitHub.
+- Remove the demo recording link that became inaccessible after the source repository moved to private.
+
 ## 0.4.1
 
 - License future releases under the KetAtlas Proprietary License; preserve third-party and earlier-release licenses.
