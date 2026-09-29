@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- Preload all mock screens and URL variants with a bounded loading queue; retain previews across navigation and dialog reopening, show loading progress, and expose an opt-out for large atlases.
+- Redesign the viewer with a compact workspace header, focused workflow navigation, a canvas toolbar, and an optional minimap.
+- Add Light/Dark controls and optional screen theme synchronization without reloading live previews; expose theme settings through the instance API and a sandbox-compatible iframe bridge.
+- Add a KétAtlas workflow monogram generated with the pinned Két Design System colors.
+
+- Document the theme bridge and framework lifecycle integration in the public authoring skill.
+
 ## 0.4.2
 
 - Point npm repository and homepage metadata to the public documentation repository.

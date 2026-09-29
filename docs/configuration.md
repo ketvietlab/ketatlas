@@ -37,6 +37,8 @@ The command may interpolate `{host}`, `{port}`, and `{atlasDirectory}`. The corr
 
 ## Screen
 
+Light/Dark appearance and **Sync screen theme** are viewer settings, not atlas JSON fields. The schema and renderer sidecar are unchanged. See [theme integration](integration.md#workspace-and-screen-themes) for the iframe bridge used by custom product screens.
+
 | Field         | Required | Meaning                                                               |
 | ------------- | -------- | --------------------------------------------------------------------- |
 | `id`          | Yes      | Unique across the atlas.                                              |
@@ -44,7 +46,7 @@ The command may interpolate `{host}`, `{port}`, and `{atlasDirectory}`. The corr
 | `url`         | Yes      | Relative or HTTP(S) URL for the actual rendered page.                 |
 | `viewport`    | No       | Overrides the atlas viewport. Both dimensions are integers, 160–4096. |
 | `description` | No       | Context inherited by its nodes.                                       |
-| `badge`       | No       | Small card footer label; defaults to `Preview`.                       |
+| `badge`       | No       | Small card metadata label; defaults to `Preview`.                     |
 
 The declared viewport determines the iframe's actual layout size. Canvas thumbnails preserve its aspect ratio. Opening a screen uses that same layout size and scales the full frame to the available width without side padding.
 

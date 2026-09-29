@@ -5,7 +5,7 @@ description: Create or update interactive framework-native mockups and workflow 
 
 # KetAtlas
 
-Deliver an editable `<name>.ketatlas/` bundle with a version 1 `atlas.json` that `npx ketatlas@0.4.2 serve` can open. KetAtlas supplies the draggable viewer; the selected product framework owns screen rendering. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
+Deliver an editable `<name>.ketatlas/` bundle with a version 1 `atlas.json` that `npx ketatlas@0.5.0 serve` can open. KetAtlas supplies the draggable viewer; the selected product framework owns screen rendering. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
 
 ## Read the brief and choose the scope
 
@@ -63,7 +63,7 @@ Place `atlas.renderer.json` beside `atlas.json`. This sidecar is the executable 
 
 ```json
 {
-  "$schema": "https://unpkg.com/ketatlas@0.4.2/renderer.schema.json",
+  "$schema": "https://unpkg.com/ketatlas@0.5.0/renderer.schema.json",
   "version": 1,
   "framework": "react",
   "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
@@ -78,7 +78,7 @@ Place `atlas.renderer.json` beside `atlas.json`. This sidecar is the executable 
 Start the viewer and HTML renderer on separate loopback ports:
 
 ```sh
-npx --yes ketatlas@0.4.2 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.5.0 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 `--renderer` is an explicit trust boundary because it executes the declared local command. The viewer remains on the first port; framework HTML, scripts, styles, assets, and same-origin requests stay on the second. Do not proxy or rebuild framework output in the viewer process.
@@ -88,7 +88,7 @@ npx --yes ketatlas@0.4.2 serve ./tasks/mockups.ketatlas --renderer --port 60550 
 Node.js 22 or newer is required. For a new, empty destination:
 
 ```sh
-npx --yes ketatlas@0.4.2 scaffold ./tasks/mockups.ketatlas --template basic
+npx --yes ketatlas@0.5.0 scaffold ./tasks/mockups.ketatlas --template basic
 ```
 
 Choose `basic` for mobile, `web` for desktop, or `process` for steps without UI. These are starting examples, not required product flows. Replace their sample content with the requested product.
@@ -199,7 +199,7 @@ Static screens use an opaque sandbox by default. Native renderer mode places scr
 
 When theme synchronization is requested, wire the product's existing theme system to the viewer. Keep the selected design system: use its semantic light/dark tokens or theme provider, including overlays, forms, surfaces, and text. Do not simulate dark mode with CSS inversion or replace product colors with hard-coded viewer colors.
 
-**Availability:** The theme-sync viewer is newer than the published `ketatlas@0.4.2`. That pinned release does not provide the sync controls or API. Confirm that the running viewer has **Appearance → Light/Dark**, **Sync screen theme**, and `setThemeSync` before claiming end-to-end support. Use an available build that includes them; do not invent a released version. A screen bridge can be prepared for an older viewer, but report that viewer synchronization remains unavailable there. Static templates from a supporting build already include the bridge; inspect before adding another listener.
+**Availability:** Theme synchronization requires KetAtlas 0.5.0 or newer. Earlier versions, including 0.4.2, do not provide the sync controls or API. Confirm that the running viewer has **Appearance → Light/Dark**, **Sync screen theme**, and `setThemeSync` before claiming end-to-end support. Upgrade older viewers before testing synchronization. Static templates from 0.5.0 include the bridge; inspect before adding another listener.
 
 The viewer's theme and screen theme are independent by default. Turning on **Sync screen theme** sends the selected theme to both canvas thumbnails and interactive previews. The protocol is:
 
@@ -237,15 +237,17 @@ Verify Light → Dark → Light with sync enabled in both a canvas preview and a
 
 Theme settings are viewer options, not fields in `atlas.json` or `atlas.renderer.json`. For an embedded supporting viewer, use `theme`, `syncTheme`, `instance.setTheme("dark")`, and `instance.setThemeSync(true)`. See the [public integration contract](https://github.com/ketvietlab/ketatlas/blob/develop/docs/integration.md#workspace-and-screen-themes) for state and events. If content cannot support the bridge or both palettes, preserve its own theme and report the limitation.
 
+KetAtlas 0.5.0 preloads registered screens and node URL variants automatically, including hidden previews. Register the theme bridge during screen initialization rather than waiting for user interaction. Use synthetic fixtures: scripts run during preload. Frames persist for the viewer session, so reopening a screen preserves form values and navigation. This is not an offline download; reload the atlas to reset the session. For an embedded large atlas, `preloadScreens: false` restores loading on demand. `instance.previewsReady` and `getState().preload` expose initial loading completion and counts; `instance.ready` only waits for the workspace. These are viewer options, not new JSON fields.
+
 ## Validate and hand off
 
 Run from the user's project with the same root for audit and serve:
 
 ```sh
-npx --yes ketatlas@0.4.2 discover . --json
-npx --yes ketatlas@0.4.2 validate ./tasks/mockups.ketatlas
-npx --yes ketatlas@0.4.2 audit ./tasks/mockups.ketatlas --strict
-npx --yes ketatlas@0.4.2 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.5.0 discover . --json
+npx --yes ketatlas@0.5.0 validate ./tasks/mockups.ketatlas
+npx --yes ketatlas@0.5.0 audit ./tasks/mockups.ketatlas --strict
+npx --yes ketatlas@0.5.0 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 Omit `--renderer` and `--html-port` only for a genuinely static atlas. Audit validates a discovered `atlas.renderer.json` and treats screen URLs as framework routes, but deliberately does not execute the command. The browser check must therefore prove the ready route, every requested screen state, framework scripts/styles, and important interactions through the two-port viewer.
