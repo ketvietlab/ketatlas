@@ -5,7 +5,7 @@ description: Create or update interactive framework-native mockups and workflow 
 
 # KetAtlas
 
-Deliver an editable `<name>.ketatlas/` bundle with a version 1 `atlas.json` that `npx ketatlas@0.5.0 serve` can open. KetAtlas supplies the draggable viewer; the selected product framework owns screen rendering. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
+Deliver an editable `<name>.ketatlas/` bundle with a version 1 `atlas.json` that `npx ketatlas@0.5.1 serve` can open. KetAtlas supplies the draggable viewer; the selected product framework owns screen rendering. A screenshot gallery or a Mermaid diagram alone is not this deliverable.
 
 ## Read the brief and choose the scope
 
@@ -63,7 +63,7 @@ Place `atlas.renderer.json` beside `atlas.json`. This sidecar is the executable 
 
 ```json
 {
-  "$schema": "https://unpkg.com/ketatlas@0.5.0/renderer.schema.json",
+  "$schema": "https://unpkg.com/ketatlas@0.5.1/renderer.schema.json",
   "version": 1,
   "framework": "react",
   "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
@@ -78,7 +78,7 @@ Place `atlas.renderer.json` beside `atlas.json`. This sidecar is the executable 
 Start the viewer and HTML renderer on separate loopback ports:
 
 ```sh
-npx --yes ketatlas@0.5.0 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.5.1 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 `--renderer` is an explicit trust boundary because it executes the declared local command. The viewer remains on the first port; framework HTML, scripts, styles, assets, and same-origin requests stay on the second. Do not proxy or rebuild framework output in the viewer process.
@@ -88,7 +88,7 @@ npx --yes ketatlas@0.5.0 serve ./tasks/mockups.ketatlas --renderer --port 60550 
 Node.js 22 or newer is required. For a new, empty destination:
 
 ```sh
-npx --yes ketatlas@0.5.0 scaffold ./tasks/mockups.ketatlas --template basic
+npx --yes ketatlas@0.5.1 scaffold ./tasks/mockups.ketatlas --template basic
 ```
 
 Choose `basic` for mobile, `web` for desktop, or `process` for steps without UI. These are starting examples, not required product flows. Replace their sample content with the requested product.
@@ -237,17 +237,21 @@ Verify Light → Dark → Light with sync enabled in both a canvas preview and a
 
 Theme settings are viewer options, not fields in `atlas.json` or `atlas.renderer.json`. For an embedded supporting viewer, use `theme`, `syncTheme`, `instance.setTheme("dark")`, and `instance.setThemeSync(true)`. See the [public integration contract](https://github.com/ketvietlab/ketatlas/blob/develop/docs/integration.md#workspace-and-screen-themes) for state and events. If content cannot support the bridge or both palettes, preserve its own theme and report the limitation.
 
-KetAtlas 0.5.0 preloads registered screens and node URL variants automatically, including hidden previews. Register the theme bridge during screen initialization rather than waiting for user interaction. Use synthetic fixtures: scripts run during preload. Frames persist for the viewer session, so reopening a screen preserves form values and navigation. This is not an offline download; reload the atlas to reset the session. For an embedded large atlas, `preloadScreens: false` restores loading on demand. `instance.previewsReady` and `getState().preload` expose initial loading completion and counts; `instance.ready` only waits for the workspace. These are viewer options, not new JSON fields.
+KetAtlas 0.5.1 preloads only the selected flow and caches up to 24 viewer-owned frames by default (`maxCachedPreviews`, browser API, range 3–128). Selecting or panning to another flow queues that flow; unvisited flows and unused screens are not preloaded. Dialogs load only when opened. Cached frames preserve form/navigation state until evicted; eviction or refresh resets it. Mock-owned nested iframes are outside the viewer's limit. Register the theme bridge during initialization because scripts execute during flow preload. This is an in-memory session cache, not an offline download.
+
+`serve --cache-size 24` sets the cache limit (default 24, range 3–128). It cannot be combined with `--no-preload` and does not modify atlas JSON. This flag is not supported by npm 0.5.0.
+
+Check the installed version and `serve --help`. The CLI in 0.5.1 accepts `--preload` (default selected-flow mode) or `--no-preload` (visible screens and an open dialog only). npm 0.5.0 accepts neither flag, preloads the entire atlas, and only exposes `preloadScreens: false` through the embedded API. With preloading disabled, offscreen/closed frames are discarded; test theme changes and state preservation within an open preview. These are viewer options, not JSON fields. Await `instance.ready` for layout, then read `instance.previewsReady` after selecting a flow to await queued attempts. `getState().preload` reports cumulative attempts, not retained frame count. Inspect automated light/dark screenshots; DOM assertions alone are not visual verification.
 
 ## Validate and hand off
 
 Run from the user's project with the same root for audit and serve:
 
 ```sh
-npx --yes ketatlas@0.5.0 discover . --json
-npx --yes ketatlas@0.5.0 validate ./tasks/mockups.ketatlas
-npx --yes ketatlas@0.5.0 audit ./tasks/mockups.ketatlas --strict
-npx --yes ketatlas@0.5.0 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.5.1 discover . --json
+npx --yes ketatlas@0.5.1 validate ./tasks/mockups.ketatlas
+npx --yes ketatlas@0.5.1 audit ./tasks/mockups.ketatlas --strict
+npx --yes ketatlas@0.5.1 serve ./tasks/mockups.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 Omit `--renderer` and `--html-port` only for a genuinely static atlas. Audit validates a discovered `atlas.renderer.json` and treats screen URLs as framework routes, but deliberately does not execute the command. The browser check must therefore prove the ready route, every requested screen state, framework scripts/styles, and important interactions through the two-port viewer.

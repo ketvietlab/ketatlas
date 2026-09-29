@@ -32,11 +32,20 @@ Legacy manifest paths remain valid command arguments, but discovery intentionall
 ```sh
 ketatlas serve ./tasks/onboarding.ketatlas
 ketatlas serve ./tasks/onboarding.ketatlas --port 4180
+ketatlas serve ./tasks/onboarding.ketatlas --no-preload
 ketatlas serve ./tasks/onboarding.ketatlas --renderer --port 60550 --html-port 60551
 ketatlas serve ./legacy/atlas.json --root .
 ```
 
 The tool supplies the viewer page. It validates the JSON at startup, serves your files, and mounts the atlas at `/`. Passing a `.ketatlas` directory resolves its `atlas.json` and uses the bundle as the file root. Explicit legacy JSON paths still support `--root` when a relative URL points outside the manifest directory.
+
+**Since 0.5.1:** `--preload` explicitly enables the default selected-flow preload and a bounded session cache (24 viewer-owned frames). Selecting another flow loads that flow; unvisited flows are not preloaded. Dialogs load when opened. Cached frames preserve state until evicted; evicted frames reload when needed. Product-owned nested iframes are outside the viewer's frame limit.
+
+`serve --cache-size 24` sets the cache limit (default 24, range 3–128). It cannot be combined with `--no-preload` and does not modify atlas JSON. This flag is not supported by npm 0.5.0.
+
+`--no-preload` loads only visible canvas screens and the interactive preview you open. It discards offscreen/closed frames, resetting their local form/navigation state. Both flags work with static and `--renderer` atlas modes; they are mutually exclusive and do not apply to plain static directories. The CLI prints the selected mode. Neither flag writes settings into the bundle.
+
+KetAtlas 0.5.0 does not recognize these flags and still preloads the entire atlas. Check `ketatlas serve --help`; its browser API already supports `preloadScreens: false`. See the [integration guide](integration.md#flow-preload-and-session-cache) for cache limits and readiness semantics.
 
 Open the printed localhost URL. Changes appear after refreshing; there is no hot reload or authoring server state. Use `?flow=your-flow-id` or `?screen=your-screen-id` to open a specific part of the map. An unknown ID falls back to the first flow.
 

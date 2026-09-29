@@ -37,6 +37,8 @@ Pin the version in run commands or the global installation for reproducible team
 
 Edit the JSON and product screen source, then refresh the browser. The default viewer address is **http://127.0.0.1:4178**.
 
+KetAtlas 0.5.1 preloads only the selected flow and keeps a bounded session cache. `serve --no-preload` disables preloading; `--preload` enables the default flow mode. These CLI flags and the flow cache require 0.5.1 or newer. Version 0.5.0 only supports the opt-out through the embedded API. See the [CLI guide](https://github.com/ketvietlab/ketatlas/blob/develop/docs/cli.md#serve-a-json-file).
+
 ## Create mockups with an agent
 
 Install the KetAtlas skill in your product project:
@@ -53,7 +55,7 @@ KetAtlas 0.4.0 keeps the viewer and product renderer separate. Put `atlas.render
 
 ```json
 {
-  "$schema": "https://unpkg.com/ketatlas@0.5.0/renderer.schema.json",
+  "$schema": "https://unpkg.com/ketatlas@0.5.1/renderer.schema.json",
   "version": 1,
   "framework": "vue",
   "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
@@ -66,7 +68,7 @@ KetAtlas 0.4.0 keeps the viewer and product renderer separate. Put `atlas.render
 Then run:
 
 ```sh
-npx --yes ketatlas@0.5.0 serve ./tasks/orders.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.5.1 serve ./tasks/orders.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 The first port serves the map and progress API. The second is owned by the declared React/Vue/KetJS/etc. server and serves screen routes. `--renderer` is explicit because it executes the local command array. Static projects continue to use the one-port command without this flag. See [Native renderers](https://github.com/ketvietlab/ketatlas/blob/develop/docs/authoring.md#framework-native-screens).

@@ -61,20 +61,21 @@ The browser implementation has no React dependency. Instantiate it after mount; 
 
 ## Options
 
-| Option             | Default                                    | Purpose                                                                             |
-| ------------------ | ------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `baseURL`          | Page URL; JSON response URL in `loadAtlas` | Resolve screen and node URLs.                                                       |
-| `screenBaseURL`    | `baseURL`                                  | Resolve registered screens and screen-node URL overrides on another origin.         |
-| `assetBaseURL`     | Built `dist/` directory                    | Public directory containing `styles/` and `assets/`; must end in `/`.               |
-| `initialFlow`      | First flow                                 | Initial flow ID.                                                                    |
-| `theme`            | `light`                                    | `light` or `dark`.                                                                  |
-| `syncTheme`        | `false`                                    | Forward the viewer theme to compatible embedded screens.                            |
-| `syncUrl`          | `false`                                    | Read/write `flow`/`screen` URL parameters. Enable for only one viewer per page.     |
-| `preloadScreens`   | `true`                                     | Load and retain all mock previews for the current viewer session.                   |
-| `maxPreviews`      | `24`                                       | Maximum visible canvas iframes, from 1 to 64. Hidden preloaded frames are retained. |
-| `previewThreshold` | `0.3`                                      | Below this zoom, canvas cards use placeholders.                                     |
-| `sandbox`          | `allow-scripts allow-forms`                | Space-separated iframe sandbox permissions.                                         |
-| `signal`           | None                                       | AbortSignal for the `loadAtlas` JSON request.                                       |
+| Option              | Default                                    | Purpose                                                                          |
+| ------------------- | ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `baseURL`           | Page URL; JSON response URL in `loadAtlas` | Resolve screen and node URLs.                                                    |
+| `screenBaseURL`     | `baseURL`                                  | Resolve registered screens and screen-node URL overrides on another origin.      |
+| `assetBaseURL`      | Built `dist/` directory                    | Public directory containing `styles/` and `assets/`; must end in `/`.            |
+| `initialFlow`       | First flow                                 | Initial flow ID.                                                                 |
+| `theme`             | `light`                                    | `light` or `dark`.                                                               |
+| `syncTheme`         | `false`                                    | Forward the viewer theme to compatible embedded screens.                         |
+| `syncUrl`           | `false`                                    | Read/write `flow`/`screen` URL parameters. Enable for only one viewer per page.  |
+| `preloadScreens`    | `true`                                     | Preload the selected flow and reuse cached previews.                             |
+| `maxCachedPreviews` | `24`                                       | Maximum mounted viewer-owned frames, from 3 to 128, including dialogs.           |
+| `maxPreviews`       | `24`                                       | Maximum visible canvas iframes, from 1 to 64; also bounded by the session cache. |
+| `previewThreshold`  | `0.3`                                      | Below this zoom, canvas cards use placeholders.                                  |
+| `sandbox`           | `allow-scripts allow-forms`                | Space-separated iframe sandbox permissions.                                      |
+| `signal`            | None                                       | AbortSignal for the `loadAtlas` JSON request.                                    |
 
 All UI is English. Labels in project data are rendered as text. Shadow DOM keeps viewer CSS and click handling isolated from the host document. Fonts are registered with one document stylesheet per asset URL; the stylesheet is retained for reuse after teardown.
 
@@ -109,15 +110,19 @@ These are viewer events. KetAtlas does not inspect or synchronize navigation ins
 
 ## Embedding behavior
 
-### Preloaded mock screens
+### Flow preload and session cache
 
-Starting with 0.5.0, opening an atlas loads all registered screens, flow previews, and node URL variants automatically, with at most four document loads in flight. The status bar reports progress. Screenless notes and external handoff links are not loaded. Canvas previews and interactive dialogs have separate frames, so interacting in a dialog does not change the workflow thumbnail. Dialog frames are shared for identical resolved URLs and viewport dimensions; query strings and fragments identify distinct variants.
+`serve --cache-size 24` sets the cache limit (default 24, range 3–128). It cannot be combined with `--no-preload` and does not modify atlas JSON. This flag is not supported by npm 0.5.0.
 
-Frames remain mounted for the lifetime of the viewer. Panning, zooming, switching flows, and reopening a dialog reuse them, including form values and navigation state. Only `maxPreviews` canvas frames are visible at once; this is not a memory limit when preloading is enabled. Use `preloadScreens: false` for very large atlases or expensive prototypes to restore loading on demand and discarding offscreen/closed frames.
+The viewer preloads only the selected flow, starting with the initial flow after workspace styles are ready. Selecting another flow queues its screen nodes and URL variants; unselected flows and unused registered screens are not loaded. Panning into another flow also selects it. Pending loads from the previous flow are cancelled. A single document loads at a time to reduce startup spikes. Interactive dialog frames are created only when opened and reused by URL and viewport size.
 
-`instance.ready` still means the workspace is usable. `await instance.previewsReady` waits for the initial load attempts; `getState().preload` and `ketatlas:preloadprogress` expose `{ total, loaded, failed, pending }` frame counts (including both canvas and dialog frames). A load error or 30-second timeout advances the queue. Failed dialog previews retry when opened. Destroying a viewer cancels its queue and settles `previewsReady`; inspect `getState().destroyed` before using it. Browsers may report an HTTP error page as loaded, and an iframe load event does not guarantee that a framework's later data requests are complete.
+`maxCachedPreviews` defaults to 24 mounted viewer-owned iframes, including dialogs. Hidden frames are evicted in least-recently-used order when the cache fills. Visible canvas frames and the open dialog are protected; at most `min(maxPreviews, maxCachedPreviews - 2)` canvas frames are visible, reserving capacity for background loading and a dialog. Large flows still load sequentially, but their older hidden frames may be evicted before the flow finishes. Returning to an evicted frame reloads it and resets its local form/navigation state. Reopening a retained frame preserves state. Nested iframes created by product mocks are outside this limit, and frame count is not a byte-level memory budget.
 
-This is an in-memory session cache, not an offline export or persistent download. Refreshing the atlas starts a new preload. Screens execute their own scripts during preload; browser-managed lazy assets and subsequent interactions can still require network access. Existing iframe sandbox and theme synchronization rules apply to hidden previews too.
+`preloadScreens: false` disables flow preloading and the retained cache: only visible canvas frames (up to `maxPreviews`, default 24) and one open dialog are mounted; offscreen and closed frames are discarded. The CLI forwards `--no-preload` to this option; `--preload` explicitly enables the default flow mode. Neither flag preloads the entire atlas. These flags and the flow cache require 0.5.1 or newer; npm 0.5.0 still preloads the entire atlas and only offers the opt-out through the browser API.
+
+`instance.ready` means workspace layout is ready. Read and await `instance.previewsReady` after each flow selection to wait for the currently queued load attempts. `getState().preload` and `ketatlas:preloadprogress` expose cumulative `{ total, loaded, failed, pending }` attempt counts, not current cache occupancy; cancelled pending attempts are removed from the totals. A load error or 30-second timeout advances the queue. Failed dialog previews retry when opened. Destroying a viewer cancels its queue and settles readiness. A frame's load event does not guarantee successful HTTP status or completion of later framework data requests.
+
+This is an in-memory session cache, not an offline download. Browser HTTP caching may reuse resources after eviction, but JavaScript executes again. Refresh to pick up edited content and reset retained screen state. Theme synchronization applies when each new frame loads and to retained frames. These are viewer options, not new atlas JSON fields.
 
 ### Workspace and screen themes
 

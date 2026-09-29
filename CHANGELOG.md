@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- Replace whole-atlas preload with selected-flow loading and a session cache of up to 24 viewer-owned frames. Create dialogs on demand, cancel pending work when switching flows, and wait for styles before mounting previews.
+
+- Add `serve --no-preload` and `--preload` to control flow preloading, plus `--cache-size` to configure the frame limit for static and native renderer atlases; keep preloading enabled by default and document loading on demand for large bundles.
+
 ## 0.5.0
 
 - Preload all mock screens and URL variants with a bounded loading queue; retain previews across navigation and dialog reopening, show loading progress, and expose an opt-out for large atlases.
