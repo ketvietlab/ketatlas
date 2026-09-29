@@ -195,6 +195,48 @@ Use the shared framework presenters/styles and deterministic fixtures. States re
 
 Static screens use an opaque sandbox by default. Native renderer mode places screens on a distinct origin and enables `allow-same-origin` there so framework modules and same-origin assets work without granting access to the viewer origin. Keep framework routes trusted and loopback-only. Test in **Try this screen**, not just a standalone tab.
 
+## Synchronize Light/Dark with screen content
+
+When theme synchronization is requested, wire the product's existing theme system to the viewer. Keep the selected design system: use its semantic light/dark tokens or theme provider, including overlays, forms, surfaces, and text. Do not simulate dark mode with CSS inversion or replace product colors with hard-coded viewer colors.
+
+**Availability:** The theme-sync viewer is newer than the published `ketatlas@0.4.2`. That pinned release does not provide the sync controls or API. Confirm that the running viewer has **Appearance → Light/Dark**, **Sync screen theme**, and `setThemeSync` before claiming end-to-end support. Use an available build that includes them; do not invent a released version. A screen bridge can be prepared for an older viewer, but report that viewer synchronization remains unavailable there. Static templates from a supporting build already include the bridge; inspect before adding another listener.
+
+The viewer's theme and screen theme are independent by default. Turning on **Sync screen theme** sends the selected theme to both canvas thumbnails and interactive previews. The protocol is:
+
+- Viewer → screen: `{ type: "ketatlas:theme", theme: "light" | "dark" | null }`.
+- Screen → viewer: `{ type: "ketatlas:theme-ready" }`, after its listener and theme provider are ready.
+- `null` means synchronization was turned off: restore the screen's original theme setting, including an absent attribute or a product's `system` preference, rather than forcing light mode.
+
+For static screens using `data-theme`, register this once in the HTML head:
+
+```js
+(() => {
+  const root = document.documentElement;
+  const original = {
+    theme: root.getAttribute("data-theme"),
+    scheme: root.style.colorScheme,
+  };
+  window.addEventListener("message", (event) => {
+    const message = event.data;
+    if (event.source !== window.parent || message?.type !== "ketatlas:theme") return;
+    if (!["light", "dark", null].includes(message.theme)) return;
+    const theme = message.theme ?? original.theme;
+    if (theme === null) root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", theme);
+    root.style.colorScheme = message.theme ?? original.scheme;
+  });
+  if (window.parent !== window) window.parent.postMessage({ type: "ketatlas:theme-ready" }, "*");
+})();
+```
+
+For React, Vue, KetJS, or another framework, install one listener in the shared presenter/provider lifecycle, adapt the assignment to the product's theme API, and remove the listener on unmount. Capture the original product preference before the first synchronized update. Send `theme-ready` after registering the listener so asynchronously mounted routes receive the current theme. Reuse the adapter across screens and atlases; avoid competing DOM listeners and framework state. Synchronized changes must not persist over the user's product theme preference, reload the iframe, remount the screen, or reset navigation/form state.
+
+Always check `event.source === window.parent`, the message type, and the theme value. The `"*"` target supports opaque sandbox origins and carries only appearance data. Never send credentials over this channel, access `parent.document`, or relax sandbox permissions to make themes work. Accessible same-origin content also receives `data-theme` and `color-scheme` from the viewer, but sandboxed and separate-origin framework screens need the bridge. Product CSS still needs to support both themes.
+
+Verify Light → Dark → Light with sync enabled in both a canvas preview and an interactive preview. Enter a form value or navigate within the preview first and confirm it survives. Turn sync off and confirm the original product theme is restored while the viewer keeps its selected theme. Check newly loaded screens and framework route changes, plus readable contrast for text, inputs, borders, and overlays in both themes. Keep screenshot evidence when browser automation is available; do not claim synchronization from a standalone screen screenshot alone.
+
+Theme settings are viewer options, not fields in `atlas.json` or `atlas.renderer.json`. For an embedded supporting viewer, use `theme`, `syncTheme`, `instance.setTheme("dark")`, and `instance.setThemeSync(true)`. See the [public integration contract](https://github.com/ketvietlab/ketatlas/blob/develop/docs/integration.md#workspace-and-screen-themes) for state and events. If content cannot support the bridge or both palettes, preserve its own theme and report the limitation.
+
 ## Validate and hand off
 
 Run from the user's project with the same root for audit and serve:

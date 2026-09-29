@@ -68,6 +68,7 @@ The browser implementation has no React dependency. Instantiate it after mount; 
 | `assetBaseURL`     | Built `dist/` directory                    | Public directory containing `styles/` and `assets/`; must end in `/`.           |
 | `initialFlow`      | First flow                                 | Initial flow ID.                                                                |
 | `theme`            | `light`                                    | `light` or `dark`.                                                              |
+| `syncTheme`        | `false`                                    | Forward the viewer theme to compatible embedded screens.                        |
 | `syncUrl`          | `false`                                    | Read/write `flow`/`screen` URL parameters. Enable for only one viewer per page. |
 | `maxPreviews`      | `24`                                       | Maximum mounted canvas iframes, from 1 to 64. The open inspector may add one.   |
 | `previewThreshold` | `0.3`                                      | Below this zoom, canvas cards use placeholders.                                 |
@@ -78,15 +79,17 @@ All UI is English. Labels in project data are rendered as text. Shadow DOM keeps
 
 ## Instance methods
 
-| Method                      | Behavior                                                                           |
-| --------------------------- | ---------------------------------------------------------------------------------- |
-| `goToFlow(id)`              | Select a flow and return to its start. Clears the search.                          |
-| `focusNode(flowId, nodeId)` | Select and focus a node.                                                           |
-| `openNode(flowId, nodeId)`  | Open a screen's interactive preview; note nodes open their details.                |
-| `fit()`                     | Fit the current flow.                                                              |
-| `zoomTo(number)`            | Zoom, clamped to 0.18–2.2.                                                         |
-| `getState()`                | Snapshot of flow ID, selected node ID, zoom, pan and counts.                       |
-| `destroy()`                 | Remove the owned viewer, frames, observers and animation work. Safe to call twice. |
+| Method                        | Behavior                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| `goToFlow(id)`                | Select a flow and return to its start. Clears the search.                          |
+| `focusNode(flowId, nodeId)`   | Select and focus a node.                                                           |
+| `openNode(flowId, nodeId)`    | Open a screen's interactive preview; note nodes open their details.                |
+| `fit()`                       | Fit the current flow.                                                              |
+| `zoomTo(number)`              | Zoom, clamped to 0.18–2.2.                                                         |
+| `setTheme("light" \| "dark")` | Update the viewer and any synchronized previews without reloading them.            |
+| `setThemeSync(boolean)`       | Enable screen synchronization or restore each screen's original theme.             |
+| `getState()`                  | Snapshot of flow ID, selected node ID, zoom, pan and counts.                       |
+| `destroy()`                   | Remove the owned viewer, frames, observers and animation work. Safe to call twice. |
 
 Unknown IDs passed to navigation methods throw `RangeError`. Methods after teardown throw, except `getState()` and `destroy()`.
 
@@ -94,6 +97,7 @@ Unknown IDs passed to navigation methods throw `RangeError`. Methods after teard
 
 Listen on the instance's `element` or its containing element. Events bubble and include a `detail` object.
 
+- `ketatlas:themechange`: `{ theme: "light" | "dark", syncTheme: boolean }`.
 - `ketatlas:flowchange`: `{ flowId }`.
 - `ketatlas:select`: `{ flowId, nodeId }`.
 - `ketatlas:previewopen`: `{ flowId, nodeId, screenId }`.
@@ -103,6 +107,38 @@ Listen on the instance's `element` or its containing element. Events bubble and 
 These are viewer events. KetAtlas does not inspect or synchronize navigation inside the iframe. Its title remains the screen that was opened; use your own prototype's navigation to continue.
 
 ## Embedding behavior
+
+### Workspace and screen themes
+
+Availability: this section documents the theme-sync viewer added after the published `ketatlas@0.4.2`. Version 0.4.2 does not include these controls or APIs. Use a build that exposes `setThemeSync` and the Appearance controls; do not assume the pinned npm release already supports them.
+
+The sidebar's **Appearance** controls switch between Light and Dark. **Sync screen theme** is off by default, preserving the product's own appearance. `getState()` includes `theme` and `syncTheme`. Theme preferences belong to each viewer instance and reset to its options on remount; they are not written into atlas JSON or global storage.
+
+When synchronization is on, KetAtlas applies `data-theme` and CSS `color-scheme` to accessible same-origin iframe documents. It also sends `{ type: "ketatlas:theme", theme: "light" | "dark" | null }` to every preview, including the interactive dialog, on load and on changes. `null` restores the screen's original appearance when synchronization is turned off. Frames are not reloaded, and their URL, form values and navigation state are preserved.
+
+Sandboxed screens (the default) and separate renderer origins need an opt-in bridge. The static templates and examples include this bridge. Add the following once in a custom screen's HTML head, or adapt its theme assignment to your React/Vue/KetJS theme provider:
+
+```js
+const root = document.documentElement;
+const original = {
+  theme: root.getAttribute("data-theme"),
+  scheme: root.style.colorScheme,
+};
+window.addEventListener("message", (event) => {
+  const message = event.data;
+  if (event.source !== window.parent || message?.type !== "ketatlas:theme") return;
+  if (!["light", "dark", null].includes(message.theme)) return;
+  const theme = message.theme ?? original.theme;
+  if (theme === null) root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", theme);
+  root.style.colorScheme = message.theme ?? original.scheme;
+});
+if (window.parent !== window) window.parent.postMessage({ type: "ketatlas:theme-ready" }, "*");
+```
+
+The ready message also supports framework presenters that mount after iframe load. The viewer only responds to its own iframe windows. Messages contain appearance preferences only; `"*"` supports opaque sandbox origins. Do not send credentials through this channel or relax sandbox permissions to make themes work. Content must provide its own light/dark CSS; KetAtlas does not invert colors, override product styles, or force unsupported third-party pages into dark mode.
+
+### Sandbox and runtime
 
 Iframe previews are sandboxed. Scripts and forms work by default, but a static page has an opaque origin: authenticated fetch, storage, some module imports, and other same-origin features can require additional permissions. Only add `allow-same-origin` for trusted prototypes. Combining it with scripts on a same-origin page weakens sandbox isolation.
 
