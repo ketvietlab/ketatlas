@@ -124,6 +124,8 @@ The viewer preloads only the selected flow, starting with the initial flow after
 
 This is an in-memory session cache, not an offline download. Browser HTTP caching may reuse resources after eviction, but JavaScript executes again. Refresh to pick up edited content and reset retained screen state. Theme synchronization applies when each new frame loads and to retained frames. These are viewer options, not new atlas JSON fields.
 
+The local server also has [HTTP revalidation support since 0.5.2](cli.md#http-resource-cache): file responses include a content-hash ETag, and unchanged GET/HEAD requests can return a bodyless 304. This reduces repeat transfers when an evicted frame is recreated, but does not restore its JavaScript state or refresh a still-mounted frame. The generated viewer and progress API use `no-store`; separate framework renderer origins own their cache policy. There is no offline cache or persistent iframe snapshot.
+
 ### Workspace and screen themes
 
 Availability: workspace theme controls and screen synchronization require KetAtlas 0.5.0 or newer. Version 0.4.2 does not include these controls or APIs. Upgrade the viewer before using `syncTheme`, `setTheme`, or `setThemeSync`.

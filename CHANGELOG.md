@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+
+- Add content-based ETags and conditional GET/HEAD responses for served files, allowing browser HTTP cache reuse without stale same-name edits. Keep the viewer bootstrap, progress API, and errors non-cacheable.
+
 ## 0.5.1
 
 - Replace whole-atlas preload with selected-flow loading and a session cache of up to 24 viewer-owned frames. Create dialogs on demand, cancel pending work when switching flows, and wait for styles before mounting previews.

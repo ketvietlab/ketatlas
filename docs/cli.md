@@ -51,6 +51,14 @@ Open the printed localhost URL. Changes appear after refreshing; there is no hot
 
 The `/__ketatlas__/` route is reserved for viewer assets. Dotfiles and paths resolving outside the file root, including symlink escapes, are not served. Only GET/HEAD are supported. The server binds to `127.0.0.1`; it is a local preview server, not a production application server.
 
+### HTTP resource cache
+
+The local static server sends a content-based SHA-256 `ETag` and `Cache-Control: private, no-cache` for files, including mock HTML, JSON, scripts, styles, images, fonts, and viewer runtime assets. Browsers may store those responses in their HTTP cache, but must revalidate before reuse. A matching `If-None-Match` on GET or HEAD returns `304 Not Modified` with no response body. Changed bytes produce a new ETag and a full `200` response, even if the filename, size, and modification time stay the same. No new CLI flags or bundle files are required.
+
+The generated viewer page, progress API, and error responses use `no-store`. Separate framework servers started with `--renderer` control caching for their own screen origin; KetAtlas does not override their headers. HTTP revalidation requires KetAtlas 0.5.2 or newer.
+
+This is separate from the 24-frame session cache. Retained iframes do not request their documents again until reloaded; refresh the atlas after editing mock content. The server reads and hashes each requested file, keeping its bytes only for the response, rather than keeping an asset cache in server RAM. Browser storage, eviction, and RAM-versus-disk placement remain browser-managed. This does not provide offline operation or preserve JavaScript/form state after iframe eviction.
+
 ### Native renderer mode
 
 `--renderer` reads `atlas.renderer.json` beside the manifest and executes its command array without a shell. This is opt-in because the project controls the command. The renderer gets `KETATLAS_HOST`, `KETATLAS_HTML_PORT`, and `KETATLAS_PROJECT_DIR`; command arguments can also use `{host}`, `{port}`, and `{atlasDirectory}` placeholders.

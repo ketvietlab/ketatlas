@@ -36,7 +36,7 @@ and preview the result. Return the serve command and verification results.
 
 `$ketatlas` is the explicit skill invocation in Codex. In other agents, use that agent's skill selector or explicitly ask it to use the installed KetAtlas skill. Keep the same product brief.
 
-The deliverable is a `<name>.ketatlas/` bundle containing JSON/schema, documentation, and either static screen assets or `atlas.renderer.json`. Do not add a package manifest, lockfile, node_modules, or copied viewer/test tooling inside the bundle. Native React/Vue/KetJS/etc. routes reuse the product's existing framework package and shared UI source outside the atlas folder. Use `ketatlas@0.5.1` for this contract. Browser checks can use the agent's existing tooling outside the atlas folder.
+The deliverable is a `<name>.ketatlas/` bundle containing JSON/schema, documentation, and either static screen assets or `atlas.renderer.json`. Do not add a package manifest, lockfile, node_modules, or copied viewer/test tooling inside the bundle. Native React/Vue/KetJS/etc. routes reuse the product's existing framework package and shared UI source outside the atlas folder. Use `ketatlas@0.5.2` for this contract. Browser checks can use the agent's existing tooling outside the atlas folder.
 
 The agent should infer routine details and record assumptions. Provide an exact list when “all screens” means a defined inventory, so missing coverage can be checked against a source.
 
@@ -83,9 +83,9 @@ For an existing prototype, ask the agent to reuse its HTML and add or update the
 ## Review the result
 
 ```sh
-npx --yes ketatlas@0.5.1 discover . --json
-npx --yes ketatlas@0.5.1 serve ./tasks/mobile.ketatlas --renderer --port 60550 --html-port 60551
-npx --yes ketatlas@0.5.1 audit ./tasks/mobile.ketatlas --strict
+npx --yes ketatlas@0.5.2 discover . --json
+npx --yes ketatlas@0.5.2 serve ./tasks/mobile.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.5.2 audit ./tasks/mobile.ketatlas --strict
 ```
 
 For a genuinely static project, omit `atlas.renderer.json`, `--renderer`, and `--html-port`.

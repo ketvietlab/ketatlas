@@ -9,7 +9,7 @@ Version 0.4 does not require static projects to change. When an atlas copied or 
 3. Reuse that presenter and its styles across all atlases in the workspace.
 4. Add namespaced Atlas routes and `atlas.renderer.json` beside each manifest.
 5. Change screen URLs to paths relative to the declared `screenBasePath`.
-6. Run `ketatlas@0.5.1 audit`, then use `serve --renderer` and verify both origins in a browser.
+6. Run `ketatlas@0.5.2 audit`, then use `serve --renderer` and verify both origins in a browser.
 
 Do not migrate to a JSON component tree or another generated HTML layer. The framework component remains the screen source of truth.
 
