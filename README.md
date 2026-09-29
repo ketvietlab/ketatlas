@@ -57,7 +57,7 @@ KetAtlas 0.4.0 keeps the viewer and product renderer separate. Put `atlas.render
 
 ```json
 {
-  "$schema": "https://unpkg.com/ketatlas@0.4.0/renderer.schema.json",
+  "$schema": "https://unpkg.com/ketatlas@0.4.1/renderer.schema.json",
   "version": 1,
   "framework": "vue",
   "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
@@ -70,7 +70,7 @@ KetAtlas 0.4.0 keeps the viewer and product renderer separate. Put `atlas.render
 Then run:
 
 ```sh
-npx --yes ketatlas@0.4.0 serve ./tasks/orders.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.4.1 serve ./tasks/orders.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 The first port serves the map and progress API. The second is owned by the declared React/Vue/KetJS/etc. server and serves screen routes. `--renderer` is explicit because it executes the local command array. Static projects continue to use the one-port command without this flag. See [Native renderers](docs/authoring.md#framework-native-screens).
