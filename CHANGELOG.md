@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- Restore the roomier 0.5.2 workflow sidebar: 256px rail, heading and count, numbered workflow rows, larger search, and Appearance controls. Keep the 0.6.0 managed viewer lifecycle and canvas behavior.
+
 ## 0.6.0
 
 - Add `serve --managed` for desktop owners. Its JSON Lines protocol reports viewer presence and selection, accepts a stop command, and closes the local server and native renderer after the last browser page closes.
