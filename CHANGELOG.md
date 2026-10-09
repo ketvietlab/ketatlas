@@ -2,7 +2,7 @@
 
 ## 0.6.1
 
-- Restore the roomier 0.5.2 workflow sidebar: 256px rail, heading and count, numbered workflow rows, larger search, and Appearance controls. Keep the 0.6.0 managed viewer lifecycle and canvas behavior.
+- Restore the roomier 0.5.2 workflow sidebar: 256px rail, heading and count, numbered workflow rows, and larger search. Keep the 0.6.0 theme toggle, Sync switch, managed viewer lifecycle, and canvas behavior.
 
 ## 0.6.0
 
