@@ -34,6 +34,7 @@ ketatlas serve ./tasks/onboarding.ketatlas
 ketatlas serve ./tasks/onboarding.ketatlas --port 4180
 ketatlas serve ./tasks/onboarding.ketatlas --no-preload
 ketatlas serve ./tasks/onboarding.ketatlas --renderer --port 60550 --html-port 60551
+ketatlas serve ./tasks/onboarding.ketatlas --managed --port 60550
 ketatlas serve ./legacy/atlas.json --root .
 ```
 
@@ -49,7 +50,15 @@ KetAtlas 0.5.0 does not recognize these flags and still preloads the entire atla
 
 Open the printed localhost URL. Changes appear after refreshing; there is no hot reload or authoring server state. Use `?flow=your-flow-id` or `?screen=your-screen-id` to open a specific part of the map. An unknown ID falls back to the first flow.
 
-The `/__ketatlas__/` route is reserved for viewer assets. Dotfiles and paths resolving outside the file root, including symlink escapes, are not served. Only GET/HEAD are supported. The server binds to `127.0.0.1`; it is a local preview server, not a production application server.
+The `/__ketatlas__/` route is reserved for viewer assets and local control APIs. Dotfiles and paths resolving outside the file root, including symlink escapes, are not served. Files support GET/HEAD; the protected progress and managed APIs use their documented methods. The server binds to `127.0.0.1`; it is a local preview server, not a production application server.
+
+### Desktop managed mode
+
+`serve <bundle> --managed` keeps the viewer in an external browser while a desktop application owns its local server. The CLI writes one JSON object per line to stdout (protocol 1); stderr carries errors. The first line is `{"type":"ready","protocol":1,"url":"http://127.0.0.1:60550","htmlOrigin":null}`. Subsequent `viewer` events include `state` (`connected` or `disconnected`) and the current `viewers` count. `state` events include `flowId` and `selectedNodeId`. On shutdown, the CLI writes `{"type":"stopped","reason":"owner-request"}` or another lifecycle reason. The owner should also treat process exit without this event as a failure.
+
+After `ready`, open `url` in the user's external browser. Send `{"type":"stop"}\n` to the CLI's stdin to stop the viewer and renderer from the owning application. Closing stdin also stops them. The CLI stops itself if no browser page connects within 60 seconds, or three seconds after the last connected page closes. The grace period covers an ordinary reload; another open viewer keeps the server running. In managed mode the owner must keep stdin open and supervise the CLI process. The ordinary `serve` output and lifecycle are unchanged.
+
+Viewer presence and state updates use same-origin requests with an unguessable token embedded only in the served viewer document. The local endpoint checks the token, origin and host and never places the token in the URL or JSON Lines output. This is a loopback ownership signal, not a browser process monitor: closing an unrelated browser window has no effect, while closing the last Atlas page does. The caller decides how its platform opens an external browser window; a generic URL opener may reuse an existing window.
 
 ### HTTP resource cache
 
