@@ -44,7 +44,7 @@ KetAtlas 0.5.1 preloads only the selected flow and keeps a bounded session cache
 Install the KetAtlas skill in your product project:
 
 ```sh
-npx skills add ketvietlab/ketatlas --skill ketatlas
+npx skills add ketvietlab/ketatlas --skill ket-atlas
 ```
 
 Ask your agent to use the skill with a product brief: requested flows, target platforms, design references, and output directory. The agent creates native framework routes (or static HTML for a static product), a version 1 `atlas.json`, and run instructions, then audits the result.
@@ -55,7 +55,7 @@ KetAtlas 0.4.0 keeps the viewer and product renderer separate. Put `atlas.render
 
 ```json
 {
-  "$schema": "https://unpkg.com/ketatlas@0.5.2/renderer.schema.json",
+  "$schema": "https://unpkg.com/ketatlas@0.6.0/renderer.schema.json",
   "version": 1,
   "framework": "vue",
   "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
@@ -68,12 +68,12 @@ KetAtlas 0.4.0 keeps the viewer and product renderer separate. Put `atlas.render
 Then run:
 
 ```sh
-npx --yes ketatlas@0.5.2 serve ./tasks/orders.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.6.0 serve ./tasks/orders.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 The first port serves the map and progress API. The second is owned by the declared React/Vue/KetJS/etc. server and serves screen routes. `--renderer` is explicit because it executes the local command array. Static projects continue to use the one-port command without this flag. See [Native renderers](https://github.com/ketvietlab/ketatlas/blob/develop/docs/authoring.md#framework-native-screens).
 
-See [Agent mockups](https://github.com/ketvietlab/ketatlas/blob/develop/docs/agent-mockups.md) for installation options, a ready-to-use request, and a reusable brief template. Agents without skill support can read the [single skill file](https://github.com/ketvietlab/ketatlas/blob/develop/skills/ketatlas/SKILL.md) directly.
+See [Agent mockups](https://github.com/ketvietlab/ketatlas/blob/develop/docs/agent-mockups.md) for installation options, a ready-to-use request, and a reusable brief template. Agents without skill support can read the [single skill file](https://github.com/ketvietlab/ketatlas/blob/develop/skills/ket-atlas/SKILL.md) directly.
 
 ## One file describes the journey
 

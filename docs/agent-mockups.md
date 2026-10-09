@@ -7,26 +7,26 @@ Give an agent the KetAtlas skill and a product brief. The agent produces native 
 From the project in which you want to create mockups:
 
 ```sh
-npx skills add ketvietlab/ketatlas --skill ketatlas
+npx skills add ketvietlab/ketatlas --skill ket-atlas
 ```
 
 Choose your agent when prompted, or target it directly:
 
 ```sh
-npx skills add ketvietlab/ketatlas --skill ketatlas --agent codex
-npx skills add ketvietlab/ketatlas --skill ketatlas --agent claude-code
+npx skills add ketvietlab/ketatlas --skill ket-atlas --agent codex
+npx skills add ketvietlab/ketatlas --skill ket-atlas --agent claude-code
 ```
 
-These commands use the separate [open agent skills CLI](https://github.com/vercel-labs/skills). Installation is project-scoped by default. The skill is a single portable [SKILL.md](../skills/ketatlas/SKILL.md), not a new KetAtlas command or a hosted generation service.
+These commands use the separate [open agent skills CLI](https://github.com/vercel-labs/skills). Installation is project-scoped by default. The skill is a single portable [SKILL.md](../skills/ket-atlas/SKILL.md), not a new KetAtlas command or a hosted generation service.
 
-If the agent does not support skill installation, attach that file or ask it to read [the skill on GitHub](https://github.com/ketvietlab/ketatlas/blob/develop/skills/ketatlas/SKILL.md) before working. Installing a skill does not require changing the product repository's runtime dependencies.
+If the agent does not support skill installation, attach that file or ask it to read [the skill on GitHub](https://github.com/ketvietlab/ketatlas/blob/develop/skills/ket-atlas/SKILL.md) before working. Installing a skill does not require changing the product repository's runtime dependencies.
 
 ## Ask for a mockup
 
 For a short request, invoke the skill and include the product, target, design reference, and flows:
 
 ```text
-Use $ketatlas to create one shared React mobile prototype for Northstar Tasks
+Use $ket-atlas to create one shared React mobile prototype for Northstar Tasks
 in ./tasks/mobile. Use 390 × 844 screens, English product copy, and the design
 system in ./design-system. Include sign-in, password recovery, task list,
 task details, and task completion. Map entry points, actions, outcomes, and
@@ -34,9 +34,9 @@ relevant error/recovery states. Implement the main interactions, then audit
 and preview the result. Return the serve command and verification results.
 ```
 
-`$ketatlas` is the explicit skill invocation in Codex. In other agents, use that agent's skill selector or explicitly ask it to use the installed KetAtlas skill. Keep the same product brief.
+`$ket-atlas` is the explicit skill invocation in Codex. In other agents, use that agent's skill selector or explicitly ask it to use the installed KetAtlas skill. Keep the same product brief.
 
-The deliverable is a `<name>.ketatlas/` bundle containing JSON/schema, documentation, and either static screen assets or `atlas.renderer.json`. Do not add a package manifest, lockfile, node_modules, or copied viewer/test tooling inside the bundle. Native React/Vue/KetJS/etc. routes reuse the product's existing framework package and shared UI source outside the atlas folder. Use `ketatlas@0.5.2` for this contract. Browser checks can use the agent's existing tooling outside the atlas folder.
+The deliverable is a `<name>.ketatlas/` bundle containing JSON/schema, documentation, and either static screen assets or `atlas.renderer.json`. Do not add a package manifest, lockfile, node_modules, or copied viewer/test tooling inside the bundle. Native React/Vue/KetJS/etc. routes reuse the product's existing framework package and shared UI source outside the atlas folder. Use `ketatlas@0.6.0` for this contract. Browser checks can use the agent's existing tooling outside the atlas folder.
 
 The agent should infer routine details and record assumptions. Provide an exact list when “all screens” means a defined inventory, so missing coverage can be checked against a source.
 
@@ -83,9 +83,9 @@ For an existing prototype, ask the agent to reuse its HTML and add or update the
 ## Review the result
 
 ```sh
-npx --yes ketatlas@0.5.2 discover . --json
-npx --yes ketatlas@0.5.2 serve ./tasks/mobile.ketatlas --renderer --port 60550 --html-port 60551
-npx --yes ketatlas@0.5.2 audit ./tasks/mobile.ketatlas --strict
+npx --yes ketatlas@0.6.0 discover . --json
+npx --yes ketatlas@0.6.0 serve ./tasks/mobile.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.6.0 audit ./tasks/mobile.ketatlas --strict
 ```
 
 For a genuinely static project, omit `atlas.renderer.json`, `--renderer`, and `--html-port`.

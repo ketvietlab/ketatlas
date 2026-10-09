@@ -46,7 +46,7 @@ Place this sidecar beside `atlas.json`:
 
 ```json
 {
-  "$schema": "https://unpkg.com/ketatlas@0.5.2/renderer.schema.json",
+  "$schema": "https://unpkg.com/ketatlas@0.6.0/renderer.schema.json",
   "version": 1,
   "framework": "ketjs",
   "command": ["npm", "run", "atlas:serve", "--", "--host", "{host}", "--port", "{port}"],
@@ -61,7 +61,7 @@ Commands are argv arrays and do not run through a shell. `cwd` is relative to th
 Run the two origins explicitly:
 
 ```sh
-npx --yes ketatlas@0.5.2 serve ./customer-journeys.ketatlas --renderer --port 60550 --html-port 60551
+npx --yes ketatlas@0.6.0 serve ./customer-journeys.ketatlas --renderer --port 60550 --html-port 60551
 ```
 
 The first origin owns only the map and progress API. The second origin owns HTML, framework modules, styles, assets, and screen-side requests. Audit validates the renderer contract and graph without executing the command; browser verification must exercise the combined result.

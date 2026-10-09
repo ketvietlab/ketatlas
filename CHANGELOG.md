@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0
+
+- Add `serve --managed` for desktop owners. Its JSON Lines protocol reports viewer presence and selection, accepts a stop command, and closes the local server and native renderer after the last browser page closes.
+- Rename the bundled agent skill to `$ket-atlas` and publish it at `skills/ket-atlas/SKILL.md`. The npm package and executable remain `ketatlas`.
+
 ## 0.5.2
 
 - Add content-based ETags and conditional GET/HEAD responses for served files, allowing browser HTTP cache reuse without stale same-name edits. Keep the viewer bootstrap, progress API, and errors non-cacheable.
