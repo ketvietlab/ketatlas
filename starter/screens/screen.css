@@ -1,0 +1,48 @@
+@import url("../../styles/design-system.document.css");
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: var(--kv-font-sans);
+  color: var(--kv-text-main);
+  background: var(--kv-panel-bg);
+}
+body {
+  display: flex;
+  flex-direction: column;
+}
+header {
+  padding: 24px;
+  border-bottom: 1px solid var(--kv-panel-border);
+  font-weight: 600;
+}
+main {
+  flex: 1;
+  padding: 48px 28px;
+}
+h1 {
+  font-size: 34px;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  margin: 0 0 20px;
+}
+p {
+  line-height: 1.7;
+  color: var(--kv-text-secondary);
+}
+footer {
+  padding: 20px;
+  border-top: 1px solid var(--kv-panel-border);
+}
+a[data-ui] {
+  width: 100%;
+  text-decoration: none;
+}
+small {
+  color: var(--kv-accent);
+  display: block;
+  margin-bottom: 20px;
+}

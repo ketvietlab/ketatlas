@@ -1,0 +1,997 @@
+import { mountProgress } from "./progress-ui.js";
+import { emptyProgress, requireProgress } from "./progress.js";
+export {
+  validateProgress,
+  summarizeProgress,
+  summarizeFlowProgress,
+  progressStatuses,
+} from "./progress.js";
+import { normalizeAtlas, safeURL } from "./config.js";
+import { layoutAtlas, edgePath } from "./layout.js";
+import { template, escapeHTML as e } from "./template.js";
+import { icons } from "./icons.js";
+import { createPreviewQueue } from "./preview-queue.js";
+export { validateAtlas, AtlasValidationError } from "./config.js";
+export { connectManagedViewer } from "./managed-client.js";
+
+const cameraMotion = Object.freeze({
+  dragPan: 1.35,
+  wheelPan: 1.45,
+  wheelZoom: 0.0032,
+  pinchZoom: 1.2,
+  zoomStep: 1.3,
+  keyPan: 120,
+  keyPanLarge: 260,
+});
+
+/** Mount an isolated viewer. Await atlas.ready before measuring or focusing it. */
+export function createAtlas(container, input, options = {}) {
+  if (!(container instanceof HTMLElement))
+    throw new TypeError("createAtlas requires an HTML element.");
+  const config = normalizeAtlas(
+    input,
+    options.baseURL || document.baseURI,
+    options.screenBaseURL || options.baseURL || document.baseURI,
+  );
+  const progressData = requireProgress(options.progress || emptyProgress(), config);
+  const maxPreviews = options.maxPreviews ?? 24,
+    previewThreshold = options.previewThreshold ?? 0.3;
+  if (!Number.isInteger(maxPreviews) || maxPreviews < 1 || maxPreviews > 64)
+    throw new RangeError("maxPreviews must be 1–64.");
+  if (!Number.isFinite(previewThreshold) || previewThreshold < 0 || previewThreshold > 2.2)
+    throw new RangeError("previewThreshold must be 0–2.2.");
+  if (options.theme !== undefined && !["light", "dark"].includes(options.theme))
+    throw new TypeError("theme must be light or dark.");
+  if (options.syncTheme !== undefined && typeof options.syncTheme !== "boolean")
+    throw new TypeError("syncTheme must be a boolean.");
+  if (options.preloadScreens !== undefined && typeof options.preloadScreens !== "boolean")
+    throw new TypeError("preloadScreens must be a boolean.");
+  const preloadScreens = options.preloadScreens ?? true;
+  const maxCachedPreviews = options.maxCachedPreviews ?? 24;
+  if (!Number.isInteger(maxCachedPreviews) || maxCachedPreviews < 3 || maxCachedPreviews > 128)
+    throw new RangeError("maxCachedPreviews must be 3–128.");
+  const sandbox = options.sandbox ?? "allow-scripts allow-forms";
+  if (
+    typeof sandbox !== "string" ||
+    sandbox
+      .split(/\s+/)
+      .filter(Boolean)
+      .some(
+        (t) =>
+          ![
+            "allow-scripts",
+            "allow-forms",
+            "allow-same-origin",
+            "allow-modals",
+            "allow-downloads",
+            "allow-popups",
+            "allow-popups-to-escape-sandbox",
+          ].includes(t),
+      )
+  )
+    throw new TypeError("Unsupported sandbox permission.");
+  const assetBaseURL = options.assetBaseURL
+    ? safeURL(options.assetBaseURL, document.baseURI)
+    : new URL(typeof __KETATLAS_BUILD__ !== "undefined" ? "./" : "../", import.meta.url).href;
+  if (!assetBaseURL.endsWith("/")) {
+    throw new TypeError("assetBaseURL must end with a slash.");
+  }
+  const host = document.createElement("div");
+  host.className = "ketatlas";
+  host.dataset.theme = options.theme || "light";
+  let syncTheme = options.syncTheme ?? false;
+  host.lang = "en";
+  const root = host.attachShadow({ mode: "open" });
+  host.style.visibility = "hidden";
+  container.append(host);
+  const stylesheet = (file, target) =>
+    new Promise((resolve, reject) => {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = new URL(file, assetBaseURL).href;
+      link.onload = resolve;
+      link.onerror = () => reject(new Error(`Cannot load KetAtlas stylesheet: ${link.href}`));
+      target.append(link);
+    });
+  const stylesReady = Promise.all([
+    stylesheet("styles/design-system.css", root),
+    stylesheet("styles/ketatlas.css", root),
+  ]);
+  const fontURL = new URL("styles/fonts.css", assetBaseURL).href;
+  if (![...document.querySelectorAll('link[rel="stylesheet"]')].some((el) => el.href === fontURL)) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = fontURL;
+    document.head.append(link);
+  }
+  const content = document.createElement("div");
+  content.innerHTML = template(config);
+  root.append(...content.childNodes);
+  const $ = (id) => root.getElementById(id),
+    shell = root.querySelector(".flow-page"),
+    icon = (name) => icons[name] || icons.circle;
+  const normalize = (t) =>
+    String(t)
+      .toLocaleLowerCase("en")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replaceAll("đ", "d");
+  const { flows, nodes, nodeByKey, flowById, width: maxWidth, height } = layoutAtlas(config);
+  const screens = new Map(config.screens.map((s) => [s.id, s]));
+  const viewport = $("map-viewport"),
+    world = $("map-world"),
+    pointers = new Map();
+  let current = flows[0],
+    selected = null,
+    view = { x: 0, y: 0, z: 0.8 },
+    frameRequest = 0,
+    drag = null,
+    suppressClick = false,
+    minimapGeometry = null,
+    pinch = null,
+    destroyed = false;
+  const tone = (kind) => ({ primary: "main", conditional: "branch", recovery: "recovery" })[kind];
+  const emit = (type, detail) =>
+    host.dispatchEvent(
+      new CustomEvent(`ketatlas:${type}`, { detail, bubbles: true, composed: true }),
+    );
+  // Sandboxed and cross-origin screens opt in through the documented message bridge.
+  const frameThemes = new WeakMap();
+  function sendTheme(frame) {
+    const theme = syncTheme ? host.dataset.theme : null;
+    try {
+      const doc = frame.contentDocument?.documentElement;
+      if (doc && !frameThemes.has(doc))
+        frameThemes.set(doc, {
+          theme: doc.getAttribute("data-theme"),
+          colorScheme: doc.style.colorScheme,
+        });
+      if (doc) {
+        const original = frameThemes.get(doc);
+        const value = theme ?? original.theme;
+        if (value === null) doc.removeAttribute("data-theme");
+        else doc.setAttribute("data-theme", value);
+        doc.style.colorScheme = theme ?? original.colorScheme;
+      }
+    } catch {
+      // Keep the iframe sandbox intact; a bridge handles inaccessible documents.
+    }
+    frame.contentWindow?.postMessage({ type: "ketatlas:theme", theme }, "*");
+  }
+  function paintTheme() {
+    const dark = host.dataset.theme === "dark";
+    $("theme-toggle").innerHTML = icon(dark ? "moon" : "sun");
+    $("theme-toggle").setAttribute("aria-pressed", String(dark));
+    $("theme-toggle").title = `Switch to ${dark ? "light" : "dark"} theme`;
+    $("theme-sync").checked = syncTheme;
+    for (const frame of root.querySelectorAll("iframe")) sendTheme(frame);
+  }
+  function setTheme(theme) {
+    if (!["light", "dark"].includes(theme)) throw new TypeError("theme must be light or dark.");
+    host.dataset.theme = theme;
+    paintTheme();
+    emit("themechange", { theme, syncTheme });
+  }
+  function setThemeSync(enabled) {
+    if (typeof enabled !== "boolean") throw new TypeError("syncTheme must be a boolean.");
+    syncTheme = enabled;
+    paintTheme();
+    emit("themechange", { theme: host.dataset.theme, syncTheme });
+  }
+  const onThemeReady = (event) => {
+    if (event.data?.type !== "ketatlas:theme-ready") return;
+    const frame = [...root.querySelectorAll("iframe")].find(
+      (el) => el.contentWindow === event.source,
+    );
+    if (frame) sendTheme(frame);
+  };
+  window.addEventListener("message", onThemeReady);
+  const createFrame = (n, reportError = true) => {
+    const el = document.createElement("iframe");
+    el.setAttribute("sandbox", sandbox);
+    el.referrerPolicy = "no-referrer";
+    el.src = n.url;
+    el.addEventListener("load", () => sendTheme(el));
+    if (reportError)
+      el.addEventListener("error", () => emit("previewerror", { nodeId: n.id, url: n.url }));
+    return el;
+  };
+  world.style.width = maxWidth + "px";
+  world.style.height = height + "px";
+  $("map-total").textContent = `${flows.length} flows · ${screens.size} screens`;
+  $("flow-count").textContent = flows.length;
+  const groups = [...new Set(flows.map((f) => f.group))];
+  let progressUI;
+  function sidebar() {
+    const q = normalize($("flow-search").value);
+    $("flow-list").innerHTML =
+      groups
+        .map((group) => {
+          const matches = flows.filter(
+            (f) =>
+              f.group === group &&
+              normalize(
+                `${f.title} ${f.group} ${f.nodes.map((n) => `${n.title} ${n.screenId || ""}`).join(" ")}`,
+              ).includes(q),
+          );
+          return matches.length
+            ? `<section><h2 class="flow-group-title">${e(group)}</h2>${matches.map((f) => `<button class="flow-link ${f === current ? "active" : ""}" data-flow="${f.id}" title="${e(f.title)}" ${f === current ? 'aria-current="true"' : ""}><span class="flow-number">${String(f.index + 1).padStart(2, "0")}</span><span class="flow-link-copy"><strong>${e(f.title)}</strong><small>${f.nodes.length} steps <span class="flow-progress-group" data-progress-flow="${f.id}"></span></small></span></button>`).join("")}</section>`
+            : "";
+        })
+        .join("") ||
+      '<div class="mock-filter-empty"><p role="status">No matching workflows.</p><button data-clear-flow-search data-ui="action" data-size="compact" data-variant="tertiary">Clear search</button></div>';
+    progressUI?.paintSidebar();
+  }
+  const defs = `<defs>${[
+    ["main", "--kv-accent"],
+    ["branch", "--kv-text-muted"],
+    ["recovery", "--kv-warning"],
+  ]
+    .map(
+      ([tone, color]) =>
+        `<marker id="arrow-${tone}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" style="fill:var(${color});stroke:none"></path></marker>`,
+    )
+    .join("")}</defs>`;
+  $("map-edges").setAttribute("viewBox", `0 0 ${maxWidth} ${height}`);
+  $("map-edges").innerHTML =
+    defs +
+    flows
+      .map((f) =>
+        f.edges
+          .map((a, i) => {
+            const from = nodeByKey.get(`${f.id}:${a.from}`),
+              to = nodeByKey.get(`${f.id}:${a.to}`),
+              path = edgePath(from, to, i);
+            return `<g class="flow-edge ${tone(a.kind)}" data-from="${from.uid}" data-to="${to.uid}"><path d="${path.d}" marker-end="url(#arrow-${tone(a.kind)})"></path><foreignObject x="${path.label[0] - 80}" y="${path.label[1] - 25}" width="160" height="50"><div xmlns="http://www.w3.org/1999/xhtml" class="edge-label-wrap"><span class="edge-label">${e(a.label)}</span></div></foreignObject></g>`;
+          })
+          .join(""),
+      )
+      .join("");
+  const labels = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  labels.classList.add("edge-label-layer");
+  for (const el of $("map-edges").querySelectorAll(".flow-edge")) {
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    label.setAttribute("class", el.getAttribute("class"));
+    label.dataset.from = el.dataset.from;
+    label.dataset.to = el.dataset.to;
+    label.append(el.querySelector("foreignObject"));
+    labels.append(label);
+  }
+  $("map-edges").append(labels);
+  $("map-lanes").innerHTML = flows
+    .map(
+      (f) =>
+        `<section class="flow-lane" data-lane="${f.id}" style="left:80px;top:${f.y}px;width:${f.width - 160}px"><div class="flow-lane-head"><span class="lane-number">${String(f.index + 1).padStart(2, "0")}</span><h2>${e(f.title)}</h2></div><p>${e(f.description)}</p></section>`,
+    )
+    .join("");
+  $("map-nodes").innerHTML = nodes
+    .map((n) => {
+      const f = flowById.get(n.flowId),
+        badge =
+          n.key === f.start
+            ? `<span class="node-badge">${icon("circle-dot")}Start here</span>`
+            : f.ends.includes(n.key)
+              ? `<span class="node-badge destination">${icon("circle-check")}Outcome</span>`
+              : "";
+      return `<article class="flow-node ${n.kind !== "screen" ? "external" : ""}" data-node="${n.uid}" data-screen-id="${n.screenId || ""}" data-flow-id="${f.id}" style="left:${n.x}px;top:${n.y}px;height:${n.height}px;--node-width:${n.width}px;--preview-width:${n.previewWidth}px;--preview-height:${n.previewHeight}px;--screen-width:${n.screen?.viewport.width || 0}px;--screen-height:${n.screen?.viewport.height || 0}px;--preview-scale:${n.screen ? n.previewWidth / n.screen.viewport.width : 1}" tabindex="0" aria-label="${e(n.title)}${n.screenId ? " · " + n.screenId : ""}">${badge}${n.kind !== "screen" ? `<span class="external-icon">${icon(n.kind === "external" ? "arrow-up-right" : "file-text")}</span><small>${n.kind === "external" ? "EXTERNAL STEP" : "PROCESS STEP"}</small><h3>${e(n.title)}</h3><p>${e(n.description)}</p>` : `<header class="node-head"><small>${n.screenId} · ${e(n.screen.badge || "Preview")}${n.url !== n.screen?.url ? " · Variant" : ""}</small><h3 title="${e(n.title)}">${e(n.title)}</h3></header><div class="node-preview"><div class="node-placeholder"><span></span><span></span><span></span><p>Zoom in to see<br>the live screen</p></div></div><footer class="node-foot"><span data-progress-screen="${n.screenId}"></span><button data-open="${n.uid}" aria-label="Open ${e(n.title)}">Open screen ${icon("arrow-up-right")}</button></footer>`}</article>`;
+    })
+    .join("");
+  for (const n of nodes) n.element = viewport.querySelector(`[data-node="${n.uid}"]`);
+  const canvasPreviews = new Map(),
+    dialogPreviews = new Map();
+  const previewKey = (n) =>
+    JSON.stringify([n.url, n.screen.viewport.width, n.screen.viewport.height]);
+  let resolveDestroyed;
+  const whenDestroyed = new Promise((resolve) => {
+    resolveDestroyed = resolve;
+  });
+  let previewClock = 0,
+    previewsVisible = false;
+  const previewQueue = createPreviewQueue(
+    (state) => {
+      if (destroyed) return;
+      $("preload-status").textContent = !preloadScreens
+        ? "Live previews"
+        : state.pending
+          ? `Loading mocks ${state.loaded + state.failed}/${state.total}`
+          : state.failed
+            ? `${state.failed} previews unavailable`
+            : "Flow ready";
+      emit("preloadprogress", state);
+    },
+    { concurrency: 1 },
+  );
+  function discardPreview(cache, key, entry) {
+    cache.delete(key);
+    entry.task.cancel();
+    entry.frame.remove();
+  }
+  function makePreviewRoom() {
+    const mounted = [...canvasPreviews]
+      .map(([key, entry]) => ({ cache: canvasPreviews, key, entry }))
+      .concat([...dialogPreviews].map(([key, entry]) => ({ cache: dialogPreviews, key, entry })))
+      .filter(({ entry }) => entry.frame.isConnected);
+    if (mounted.length < maxCachedPreviews) return;
+    const oldest = mounted
+      .filter(({ entry }) => entry.frame.hidden)
+      .sort((a, b) => a.entry.used - b.entry.used)[0];
+    if (oldest) discardPreview(oldest.cache, oldest.key, oldest.entry);
+  }
+  function preparePreview(n, target, canvas = false) {
+    const frame = createFrame(n, false);
+    frame.title = canvas ? `HTML ${n.screenId} · ${n.title}` : `Try ${n.title}`;
+    frame.hidden = true;
+    frame.style.width = n.screen.viewport.width + "px";
+    frame.style.height = n.screen.viewport.height + "px";
+    if (canvas) {
+      frame.tabIndex = -1;
+      frame.setAttribute("aria-hidden", "true");
+    } else frame.addEventListener("load", resizePreview);
+    const entry = { frame, used: ++previewClock };
+    const task = previewQueue.add((finish) => {
+      const loaded = () => finish(true),
+        failed = () => finish(false);
+      frame.addEventListener("load", loaded, { once: true });
+      frame.addEventListener("error", failed, { once: true });
+      makePreviewRoom();
+      target.append(frame);
+      return (success) => {
+        frame.removeEventListener("load", loaded);
+        frame.removeEventListener("error", failed);
+        if (success === false) {
+          frame.src = "about:blank";
+          frame.dataset.preloadFailed = "true";
+          if (!destroyed) emit("previewerror", { nodeId: n.id, url: n.url });
+        }
+      };
+    });
+    entry.task = task;
+    return entry;
+  }
+  function preloadFlow(flow) {
+    if (!preloadScreens || !previewsVisible) return;
+    for (const [key, entry] of canvasPreviews) {
+      if (nodeByKey.get(key).flowId !== flow.id && entry.task.pending)
+        discardPreview(canvasPreviews, key, entry);
+    }
+    for (const n of flow.nodes.filter((node) => node.screenId)) {
+      if (!canvasPreviews.has(n.uid))
+        canvasPreviews.set(
+          n.uid,
+          preparePreview(n, n.element.querySelector(".node-preview"), true),
+        );
+      canvasPreviews.get(n.uid).task.prioritize();
+    }
+  }
+  function setCurrent(f, updateUrl = true) {
+    if (!f) return;
+    current = f;
+    preloadFlow(f);
+    viewport.setAttribute("aria-description", [f.title, f.description].filter(Boolean).join(" — "));
+    sidebar();
+    emit("flowchange", { flowId: f.id });
+    if (updateUrl && options.syncUrl) {
+      const url = new URL(location.href);
+      url.searchParams.set("flow", f.id);
+      url.searchParams.delete("screen");
+      history.replaceState(history.state, "", url);
+    }
+  }
+  function visibleFrames() {
+    if (!previewsVisible) return;
+    const width = viewport.clientWidth,
+      height = viewport.clientHeight;
+    const candidates = nodes
+      .filter((n) => n.screenId && (!preloadScreens || n.flowId === current.id))
+      .map((n) => ({ n, left: n.x * view.z + view.x, top: n.y * view.z + view.y }))
+      .filter(
+        ({ n, left, top }) =>
+          view.z >= previewThreshold &&
+          left + n.width * view.z > -150 &&
+          left < width + 150 &&
+          top + n.height * view.z > -150 &&
+          top < height + 150,
+      )
+      .sort(
+        (a, b) =>
+          Math.hypot(a.left - width / 2, a.top - height / 2) -
+          Math.hypot(b.left - width / 2, b.top - height / 2),
+      )
+      .slice(0, preloadScreens ? Math.min(maxPreviews, maxCachedPreviews - 2) : maxPreviews);
+    const wanted = new Set(candidates.map(({ n }) => n.uid));
+    for (const n of nodes) {
+      const preview = n.element.querySelector(".node-preview");
+      if (!preview) continue;
+      const cached = canvasPreviews.get(n.uid);
+      if (cached) {
+        cached.frame.hidden = !wanted.has(n.uid);
+        if (wanted.has(n.uid)) {
+          cached.used = ++previewClock;
+          cached.task.prioritize();
+        }
+        continue;
+      }
+      const frame = preview.querySelector("iframe");
+      if (wanted.has(n.uid) && !frame) {
+        if (preloadScreens) {
+          const entry = preparePreview(n, preview, true);
+          canvasPreviews.set(n.uid, entry);
+          entry.frame.hidden = false;
+          entry.task.prioritize();
+          continue;
+        }
+        const el = createFrame(n);
+        el.title = `HTML ${n.screenId} · ${n.title}`;
+        el.tabIndex = -1;
+        el.setAttribute("aria-hidden", "true");
+        preview.append(el);
+      } else if (!wanted.has(n.uid) && frame) frame.remove();
+    }
+  }
+  function minimap() {
+    const f = current,
+      scale = Math.min(152 / f.width, 92 / f.height),
+      ox = (168 - f.width * scale) / 2,
+      oy = (114 - f.height * scale) / 2;
+    minimapGeometry = { scale, ox, oy };
+    const x = (-view.x / view.z) * scale + ox,
+      y = (-view.y / view.z - f.y) * scale + oy,
+      w = (viewport.clientWidth / view.z) * scale,
+      h = (viewport.clientHeight / view.z) * scale;
+    $("minimap").innerHTML =
+      `<defs><clipPath id="mini-clip"><rect x="${ox}" y="${oy}" width="${f.width * scale}" height="${f.height * scale}"></rect></clipPath></defs>${f.nodes.map((n) => `<rect class="minimap-node ${n.key === f.start ? "start" : ""}" x="${n.x * scale + ox}" y="${(n.y - f.y) * scale + oy}" width="${n.width * scale}" height="${n.height * scale}" rx="1"></rect>`).join("")}<rect class="minimap-window" x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#mini-clip)"></rect>`;
+  }
+  function paint() {
+    frameRequest = 0;
+    if (destroyed) return;
+    world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`;
+    viewport.style.backgroundSize = `${Math.max(20, 24 * view.z)}px ${Math.max(20, 24 * view.z)}px`;
+    viewport.style.backgroundPosition = `${view.x}px ${view.y}px`;
+    $("zoom-reset").textContent = Math.round(view.z * 100) + "%";
+    viewport.dataset.zoom = String(view.z);
+    viewport.dataset.panX = String(view.x);
+    viewport.dataset.panY = String(view.y);
+    visibleFrames();
+    minimap();
+    emit("viewportchange", { ...view });
+  }
+  function schedule() {
+    if (!destroyed && !frameRequest) frameRequest = requestAnimationFrame(paint);
+  }
+  function zoomTo(z, cx = viewport.clientWidth / 2, cy = viewport.clientHeight / 2) {
+    z = Math.max(0.18, Math.min(2.2, z));
+    const wx = (cx - view.x) / view.z,
+      wy = (cy - view.y) / view.z;
+    view = { x: cx - wx * z, y: cy - wy * z, z };
+    schedule();
+  }
+  function focusNode(n, resetZoom = false) {
+    if (resetZoom) view.z = viewport.clientWidth < 700 ? 0.68 : 0.8;
+    view.x = Math.min(64, viewport.clientWidth * 0.08) - n.x * view.z;
+    view.y = (viewport.clientWidth < 700 ? 100 : 124) - n.y * view.z;
+    schedule();
+  }
+  function fitFlow() {
+    const f = current,
+      top = 36,
+      bottom = 80,
+      availableW = viewport.clientWidth - 64,
+      availableH = viewport.clientHeight - top - bottom,
+      z = Math.max(0.18, Math.min(1.1, availableW / f.width, availableH / f.height));
+    view = {
+      z,
+      x: (viewport.clientWidth - f.width * z) / 2,
+      y: top + (availableH - f.height * z) / 2 - f.y * z,
+    };
+    schedule();
+  }
+  function chooseFlow(id, focus = false) {
+    const f = flowById.get(id);
+    if (!f) return;
+    clearSelection();
+    setCurrent(f);
+    const query = normalize($("flow-search").value),
+      match = query
+        ? f.nodes.find((n) => normalize(`${n.screenId || ""} ${n.title}`).includes(query))
+        : null;
+    focusNode(match || nodeByKey.get(`${f.id}:${f.start}`), true);
+    closeSidebar();
+    if (focus) (isMobile() ? viewport : root.querySelector(".flow-link.active"))?.focus();
+  }
+  function clearSelection() {
+    selected = null;
+    world.classList.remove("has-selection");
+    root
+      .querySelectorAll(".flow-node.selected,.flow-node.related-node")
+      .forEach((el) => el.classList.remove("selected", "related-node"));
+    root.querySelectorAll(".flow-edge.related").forEach((el) => el.classList.remove("related"));
+    $("node-details").hidden = true;
+  }
+  function selectNode(n) {
+    clearSelection();
+    selected = n;
+    setCurrent(flowById.get(n.flowId));
+    n.element.classList.add("selected");
+    world.classList.add("has-selection");
+    const f = current,
+      edges = f.edges.filter((a) => a.from === n.key),
+      connected = new Set();
+    for (const el of root.querySelectorAll(".flow-edge"))
+      if (el.dataset.from === n.uid || el.dataset.to === n.uid) {
+        el.classList.add("related");
+        connected.add(el.dataset.from);
+        connected.add(el.dataset.to);
+      }
+    for (const key of connected) nodeByKey.get(key)?.element.classList.add("related-node");
+    $("node-details").innerHTML =
+      `<div class="detail-head"><div class="grow"><small>${e(n.screenId || "Process step")}</small><h3>${e(n.title)}</h3></div><button class="icon-button" data-clear-selection aria-label="Clear selection">${icon("x")}</button></div><div data-progress-screen="${e(n.screenId || "")}"></div>${n.screenId ? `<button data-edit-progress="${e(n.screenId)}" data-ui="action" data-variant="secondary">Screen progress</button>` : ""}<h4>Next steps</h4>${
+        edges.length
+          ? edges
+              .map((a) => {
+                const to = nodeByKey.get(`${f.id}:${a.to}`);
+                return `<button class="detail-edge" data-focus="${to.uid}"><strong>${e(a.label)} →</strong><span>${e(to.title)}${to.screenId ? " · " + to.screenId : ""}</span></button>`;
+              })
+              .join("")
+          : "<p>This is the end of this flow.</p>"
+      }${n.screenId ? `<button data-open="${n.uid}" data-ui="action" data-variant="primary">Try this screen</button>` : `<p>${e(n.description)}</p>${n.url ? `<a data-ui="action" data-variant="secondary" href="${e(n.url)}" target="_blank" rel="noopener noreferrer">Open reference ${icon("arrow-up-right")}</a>` : ""}`}`;
+    if (!n.screenId) $("node-details").querySelector("[data-progress-screen]").remove();
+    progressUI.paint();
+    $("node-details").hidden = false;
+    emit("select", { flowId: n.flowId, nodeId: n.id });
+    minimap();
+  }
+  let previewNode = null;
+  function resizePreview() {
+    if (!previewNode || !$("screen-dialog").open) return;
+    const v = previewNode.screen.viewport,
+      dialog = $("screen-dialog"),
+      frame = $("dialog-preview").querySelector("iframe:not([hidden])");
+    if (!frame) return;
+    const scale = Math.min(1, dialog.querySelector(".preview-scroll").clientWidth / v.width);
+    $("dialog-preview").style.width = v.width * scale + "px";
+    $("dialog-preview").style.height = v.height * scale + "px";
+    frame.style.width = v.width + "px";
+    frame.style.height = v.height + "px";
+    frame.style.transform = `scale(${scale})`;
+    frame.style.transformOrigin = "top left";
+  }
+  function openScreen(n) {
+    if (!n.screenId) {
+      selectNode(n);
+      return;
+    }
+    previewNode = n;
+    progressUI.preview(n.screenId, n.flowId, n.id);
+    $("dialog-screen-id").textContent = n.screenId;
+    $("dialog-title").textContent = n.title;
+    $("dialog-open").href = n.url;
+    const key = previewKey(n);
+    if (preloadScreens && !dialogPreviews.has(key))
+      dialogPreviews.set(key, preparePreview(n, $("dialog-preview")));
+    const cached = dialogPreviews.get(key);
+    const frame = cached?.frame || createFrame(n);
+    frame.title = `Try ${n.title}`;
+    if (cached) {
+      cached.used = ++previewClock;
+      for (const { frame: other } of dialogPreviews.values()) other.hidden = other !== frame;
+      cached.task.prioritize();
+      if (frame.dataset.preloadFailed) {
+        delete frame.dataset.preloadFailed;
+        frame.src = n.url;
+      }
+    } else $("dialog-preview").replaceChildren(frame);
+    const dialog = $("screen-dialog");
+    dialog.style.setProperty("--dialog-width", n.screen.viewport.width + "px");
+    dialog.showModal();
+    resizePreview();
+    emit("previewopen", { flowId: n.flowId, nodeId: n.id, screenId: n.screenId });
+  }
+  function point(event) {
+    const r = viewport.getBoundingClientRect();
+    return { x: event.clientX - r.left, y: event.clientY - r.top };
+  }
+  function syncCurrentFromPan() {
+    const worldY = (viewport.clientHeight / 2 - view.y) / view.z,
+      closest = flows.reduce((a, b) =>
+        Math.abs(a.y + a.height / 2 - worldY) < Math.abs(b.y + b.height / 2 - worldY) ? a : b,
+      );
+    if (closest !== current && !selected) setCurrent(closest);
+  }
+  viewport.addEventListener("pointerdown", (event) => {
+    if (
+      event.button !== 0 ||
+      event.target.closest("button,a,.node-details,.map-minimap,.map-bottom")
+    )
+      return;
+    event.preventDefault();
+    viewport.focus({ preventScroll: true });
+    (event.target.closest("[data-node]") || viewport).setPointerCapture(event.pointerId);
+    pointers.set(event.pointerId, point(event));
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinch = {
+        distance: Math.hypot(a.x - b.x, a.y - b.y),
+        z: view.z,
+        worldX: ((a.x + b.x) / 2 - view.x) / view.z,
+        worldY: ((a.y + b.y) / 2 - view.y) / view.z,
+      };
+      drag = null;
+    } else drag = { id: event.pointerId, start: point(event), x: view.x, y: view.y, moved: false };
+  });
+  viewport.addEventListener("pointermove", (event) => {
+    if (!pointers.has(event.pointerId)) return;
+    pointers.set(event.pointerId, point(event));
+    if (pointers.size >= 2 && pinch) {
+      const [a, b] = [...pointers.values()],
+        ratio = Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, pinch.distance),
+        z = Math.max(0.18, Math.min(2.2, pinch.z * Math.pow(ratio, cameraMotion.pinchZoom)));
+      view = { z, x: (a.x + b.x) / 2 - pinch.worldX * z, y: (a.y + b.y) / 2 - pinch.worldY * z };
+      suppressClick = true;
+      schedule();
+      return;
+    }
+    if (!drag || drag.id !== event.pointerId) return;
+    const p = point(event),
+      dx = p.x - drag.start.x,
+      dy = p.y - drag.start.y;
+    if (Math.hypot(dx, dy) > 4) drag.moved = true;
+    if (drag.moved) {
+      viewport.classList.add("dragging");
+      view.x = drag.x + dx * cameraMotion.dragPan;
+      view.y = drag.y + dy * cameraMotion.dragPan;
+      schedule();
+    }
+  });
+  function pointerEnd(event) {
+    if (drag?.moved) suppressClick = true;
+    pointers.delete(event.pointerId);
+    pinch = null;
+    drag = null;
+    if (pointers.size === 1) {
+      const [id, position] = [...pointers.entries()][0];
+      drag = { id, start: position, x: view.x, y: view.y, moved: false };
+    }
+    viewport.classList.remove("dragging");
+    if (event.target.hasPointerCapture?.(event.pointerId))
+      event.target.releasePointerCapture(event.pointerId);
+    syncCurrentFromPan();
+    schedule();
+    setTimeout(() => {
+      suppressClick = false;
+    }, 0);
+  }
+  viewport.addEventListener("pointerup", pointerEnd);
+  viewport.addEventListener("pointercancel", pointerEnd);
+  viewport.addEventListener(
+    "wheel",
+    (event) => {
+      if (event.target.closest(".node-details,.map-minimap,.map-zoom")) return;
+      event.preventDefault();
+      if (event.ctrlKey || event.metaKey) {
+        const p = point(event);
+        zoomTo(view.z * Math.exp(-event.deltaY * cameraMotion.wheelZoom), p.x, p.y);
+      } else {
+        const unit =
+          event.deltaMode === WheelEvent.DOM_DELTA_LINE
+            ? 16
+            : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+              ? viewport.clientHeight
+              : 1;
+        view.x -= event.deltaX * unit * cameraMotion.wheelPan;
+        view.y -= event.deltaY * unit * cameraMotion.wheelPan;
+        syncCurrentFromPan();
+        schedule();
+      }
+    },
+    { passive: false },
+  );
+  viewport.addEventListener("keydown", (event) => {
+    if (event.target.closest("button,a,input") || $("screen-dialog").open) return;
+    const step = event.shiftKey ? cameraMotion.keyPanLarge : cameraMotion.keyPan;
+    if (event.key === "ArrowLeft") view.x += step;
+    else if (event.key === "ArrowRight") view.x -= step;
+    else if (event.key === "ArrowUp") view.y += step;
+    else if (event.key === "ArrowDown") view.y -= step;
+    else if (["+", "="].includes(event.key)) {
+      zoomTo(view.z * cameraMotion.zoomStep);
+      event.preventDefault();
+      return;
+    } else if (event.key === "-") {
+      zoomTo(view.z / cameraMotion.zoomStep);
+      event.preventDefault();
+      return;
+    } else if (event.key.toLowerCase() === "f") {
+      fitFlow();
+      event.preventDefault();
+      return;
+    } else if (event.key === "0") {
+      focusNode(nodeByKey.get(`${current.id}:${current.start}`), true);
+      event.preventDefault();
+      return;
+    } else if (event.key === "Escape") {
+      clearSelection();
+      return;
+    } else if (event.key === "Enter" && event.target.dataset.node) {
+      openScreen(nodeByKey.get(event.target.dataset.node));
+      return;
+    } else return;
+    event.preventDefault();
+    syncCurrentFromPan();
+    schedule();
+  });
+  root.addEventListener("click", (event) => {
+    const b = event.target.closest("button");
+    if (b?.hasAttribute("data-clear-flow-search")) {
+      $("flow-search").value = "";
+      sidebar();
+      $("flow-search").focus();
+    }
+    if (b?.dataset.flow) {
+      chooseFlow(b.dataset.flow, true);
+      return;
+    }
+    if (b?.dataset.open) {
+      openScreen(nodeByKey.get(b.dataset.open));
+      return;
+    }
+    if (b?.dataset.focus) {
+      const n = nodeByKey.get(b.dataset.focus);
+      focusNode(n);
+      selectNode(n);
+      return;
+    }
+    if (b?.hasAttribute("data-clear-selection")) {
+      clearSelection();
+      return;
+    }
+    const n = event.target.closest("[data-node]");
+    if (n && !suppressClick) {
+      selectNode(nodeByKey.get(n.dataset.node));
+      return;
+    }
+    if (event.target === viewport || event.target === world) clearSelection();
+  });
+  viewport.addEventListener("dblclick", (event) => {
+    const n = event.target.closest("[data-node]");
+    if (n && !event.target.closest("button")) openScreen(nodeByKey.get(n.dataset.node));
+  });
+  progressUI = mountProgress(root, config, progressData, options, (id) => {
+    const n = nodes.find((n) => n.screenId === id);
+    if (n) {
+      setCurrent(flowById.get(n.flowId));
+      focusNode(n, true);
+      selectNode(n);
+    }
+  });
+  $("open-progress").onclick = () => progressUI.open();
+  $("node-details").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-edit-progress]");
+    if (button) progressUI.edit(button.dataset.editProgress);
+  });
+  $("flow-search").addEventListener("input", sidebar);
+  $("zoom-in").onclick = () => zoomTo(view.z * cameraMotion.zoomStep);
+  $("zoom-out").onclick = () => zoomTo(view.z / cameraMotion.zoomStep);
+  $("zoom-reset").onclick = () => zoomTo(1);
+  $("zoom-fit").onclick = fitFlow;
+  $("toggle-minimap").onclick = () => {
+    $("map-minimap").hidden = !$("map-minimap").hidden;
+    $("toggle-minimap").setAttribute("aria-expanded", String(!$("map-minimap").hidden));
+  };
+  $("theme-toggle").onclick = () => setTheme(host.dataset.theme === "dark" ? "light" : "dark");
+  $("theme-sync").onchange = (event) => setThemeSync(event.target.checked);
+  paintTheme();
+  $("minimap-fit").onclick = fitFlow;
+  $("flow-start").onclick = () => {
+    clearSelection();
+    focusNode(nodeByKey.get(`${current.id}:${current.start}`), true);
+  };
+  $("minimap").addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+    const rect = $("minimap").getBoundingClientRect(),
+      x = ((event.clientX - rect.left) * 168) / rect.width,
+      y = ((event.clientY - rect.top) * 114) / rect.height;
+    view.x = viewport.clientWidth / 2 - ((x - minimapGeometry.ox) / minimapGeometry.scale) * view.z;
+    view.y =
+      viewport.clientHeight / 2 -
+      ((y - minimapGeometry.oy) / minimapGeometry.scale + current.y) * view.z;
+    schedule();
+  });
+  function closeSidebar(returnFocus = false) {
+    shell.classList.remove("sidebar-open");
+    $("map-menu").setAttribute("aria-expanded", "false");
+    if (returnFocus) $("map-menu").focus();
+  }
+  function isMobile() {
+    return getComputedStyle($("map-menu")).display !== "none";
+  }
+  $("map-menu").onclick = () => {
+    const open = shell.classList.toggle("sidebar-open");
+    $("map-menu").setAttribute("aria-expanded", String(open));
+    (open ? $("flow-search") : $("map-menu")).focus();
+  };
+  root.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (shell.classList.contains("sidebar-open")) {
+      event.preventDefault();
+      closeSidebar(true);
+    }
+  });
+  root.addEventListener("click", (event) => {
+    const insideNavigation = event
+      .composedPath()
+      .some((element) => element instanceof Element && element.matches(".map-sidebar,#map-menu"));
+    if (shell.classList.contains("sidebar-open") && !insideNavigation) {
+      closeSidebar();
+    }
+  });
+  $("map-help").onclick = () => $("help-dialog").showModal();
+  $("close-help").onclick = () => $("help-dialog").close();
+  $("close-screen").onclick = () => $("screen-dialog").close();
+  $("screen-dialog").addEventListener("close", () => {
+    if ($("screen-dialog").open) return;
+    previewNode = null;
+    if (preloadScreens) for (const { frame } of dialogPreviews.values()) frame.hidden = true;
+    else $("dialog-preview").replaceChildren();
+  });
+  for (const [id, name] of [
+    ["map-menu", "layout-grid"],
+    ["map-help", "circle-help"],
+    ["zoom-in", "plus"],
+    ["zoom-out", "minus"],
+    ["zoom-fit", "expand"],
+    ["close-screen", "x"],
+  ])
+    $(id).innerHTML = icon(name);
+  const observer = new ResizeObserver(() => {
+    if (!isMobile()) closeSidebar();
+    schedule();
+    resizePreview();
+  });
+  observer.observe(viewport);
+  observer.observe($("screen-dialog"));
+  const query = new URLSearchParams(options.syncUrl ? location.search : ""),
+    requested = query.get("screen"),
+    initialNode = requested ? nodes.find((n) => n.screenId === requested) : null;
+  current = initialNode
+    ? flowById.get(initialNode.flowId)
+    : flowById.get(options.initialFlow || query.get("flow")) || flows[0];
+  setCurrent(current);
+  focusNode(initialNode || nodeByKey.get(`${current.id}:${current.start}`), true);
+  paint();
+  const ready = stylesReady.then(() => {
+    if (destroyed) return;
+    previewsVisible = true;
+    host.style.visibility = "";
+    preloadFlow(current);
+    previewQueue.seal();
+    focusNode(initialNode || nodeByKey.get(`${current.id}:${current.start}`), true);
+    paint();
+  });
+  const requireNode = (flowId, nodeId) => {
+    const n = nodeByKey.get(`${flowId}:${nodeId}`);
+    if (!n) throw new RangeError(`Unknown node: ${flowId}/${nodeId}`);
+    return n;
+  };
+  const active = () => {
+    if (destroyed) throw new Error("This atlas has been destroyed.");
+  };
+  return {
+    element: host,
+    ready,
+    get previewsReady() {
+      return Promise.race([ready.then(() => previewQueue.ready), whenDestroyed]);
+    },
+    goToFlow(id) {
+      active();
+      if (!flowById.has(id)) throw new RangeError(`Unknown flow: ${id}`);
+      $("flow-search").value = "";
+      chooseFlow(id);
+    },
+    focusNode(flowId, nodeId) {
+      active();
+      const n = requireNode(flowId, nodeId);
+      setCurrent(flowById.get(flowId));
+      focusNode(n, true);
+      selectNode(n);
+    },
+    openNode(flowId, nodeId) {
+      active();
+      openScreen(requireNode(flowId, nodeId));
+    },
+    fit() {
+      active();
+      fitFlow();
+    },
+    zoomTo(value) {
+      active();
+      if (!Number.isFinite(value)) throw new TypeError("Zoom must be a finite number.");
+      zoomTo(value);
+    },
+    setTheme(theme) {
+      active();
+      setTheme(theme);
+    },
+    setThemeSync(enabled) {
+      active();
+      setThemeSync(enabled);
+    },
+    getState() {
+      return {
+        flowId: current.id,
+        selectedNodeId: selected?.id ?? null,
+        zoom: view.z,
+        pan: { x: view.x, y: view.y },
+        flowCount: flows.length,
+        nodeCount: nodes.length,
+        screenCount: screens.size,
+        theme: host.dataset.theme,
+        syncTheme,
+        preload: previewQueue.state(),
+        destroyed,
+      };
+    },
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      resolveDestroyed();
+      previewQueue.destroy();
+      observer.disconnect();
+      window.removeEventListener("message", onThemeReady);
+      cancelAnimationFrame(frameRequest);
+      for (const dialog of root.querySelectorAll("dialog[open]")) dialog.close();
+      host.remove();
+    },
+  };
+}
+/** Load relative screen URLs against the JSON file, not the embedding page. */
+export async function loadAtlas(container, url, options = {}) {
+  const absolute = safeURL(String(url), document.baseURI);
+  const response = await fetch(absolute, { signal: options.signal });
+  if (!response.ok) throw new Error(`Cannot load atlas: HTTP ${response.status} (${absolute})`);
+  const config = await response.json();
+  let progressOptions = {};
+  if (options.progressEndpoint) {
+    const endpoint = safeURL(options.progressEndpoint, absolute);
+    const reloadProgress = async () => {
+      const r = await fetch(endpoint, { signal: options.signal, cache: "no-store" });
+      if (!r.ok) throw new Error(`Cannot load progress: HTTP ${r.status}`);
+      return r.json();
+    };
+    const result = await reloadProgress();
+    progressOptions = { progress: result.data, progressRevision: result.revision, reloadProgress };
+    if (result.editable && options.progressToken)
+      progressOptions.saveProgress = async (screenId, record, revision) => {
+        const r = await fetch(endpoint, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "If-Match": revision,
+            "X-KetAtlas-Token": options.progressToken,
+          },
+          body: JSON.stringify({ screenId, record }),
+        });
+        const result = await r.json();
+        if (!r.ok) throw new Error(result.error || `Cannot save: HTTP ${r.status}`);
+        return result;
+      };
+  } else if (!options.progress) {
+    const progressURL = new URL(safeURL(options.progressURL || absolute, absolute));
+    if (!options.progressURL)
+      progressURL.pathname = progressURL.pathname.replace(/\.json$/i, "") + ".progress.json";
+    const r = await fetch(progressURL, { signal: options.signal });
+    if (r.ok) progressOptions.progress = await r.json();
+    else if (r.status !== 404) throw new Error(`Cannot load progress: HTTP ${r.status}`);
+  }
+  const atlas = createAtlas(container, config, {
+    ...options,
+    ...progressOptions,
+    baseURL: options.baseURL || response.url || absolute,
+  });
+  try {
+    await atlas.ready;
+    return atlas;
+  } catch (error) {
+    atlas.destroy();
+    throw error;
+  }
+}

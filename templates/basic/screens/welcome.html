@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Make the journey visible.</title>
+    <link rel="stylesheet" href="screen.css" />
+    <script>
+      // Optional KetAtlas theme bridge; the product owns its light/dark styles.
+      (() => {
+        const root = document.documentElement;
+        const original = { theme: root.getAttribute("data-theme"), scheme: root.style.colorScheme };
+        window.addEventListener("message", (event) => {
+          const message = event.data;
+          if (event.source !== window.parent || message?.type !== "ketatlas:theme") return;
+          if (!["light", "dark", null].includes(message.theme)) return;
+          const theme = message.theme ?? original.theme;
+          if (theme === null) root.removeAttribute("data-theme");
+          else root.setAttribute("data-theme", theme);
+          root.style.colorScheme = message.theme ?? original.scheme;
+        });
+        if (window.parent !== window)
+          window.parent.postMessage({ type: "ketatlas:theme-ready" }, "*");
+      })();
+    </script>
+  </head>
+  <body data-kv-design-system>
+    <header>Your project</header>
+    <main>
+      <small>MADE WITH KETATLAS</small>
+      <h1>Make the journey visible.</h1>
+      <p>
+        This is a real HTML page. Replace it with your own prototype, then connect the next step in
+        atlas.json.
+      </p>
+    </main>
+    <footer><a href="done.html" data-ui="action" data-variant="primary">Continue</a></footer>
+  </body>
+</html>

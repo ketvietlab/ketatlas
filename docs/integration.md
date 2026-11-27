@@ -2,7 +2,7 @@
 
 Use the CLI for a standalone map. Use the JavaScript API when a map belongs inside a documentation portal or another application.
 
-The proprietary license permits running official builds. Redistributing the KetAtlas runtime, including publicly hosting a copied runtime for others, requires separate written permission. The integration instructions below describe the technical setup for authorized deployments.
+KetAtlas 1.0.0 and later can be embedded and redistributed under the [MIT License](https://github.com/ketvietlab/ketatlas/blob/develop/LICENSE). Include the copyright and license notice when redistributing the runtime, and retain the bundled third-party notices. Previously published archives remain under the licenses they ship with.
 
 ## Plain HTML
 

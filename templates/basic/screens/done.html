@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Your first flow is ready.</title>
+    <link rel="stylesheet" href="screen.css" />
+    <script>
+      // Optional KetAtlas theme bridge; the product owns its light/dark styles.
+      (() => {
+        const root = document.documentElement;
+        const original = { theme: root.getAttribute("data-theme"), scheme: root.style.colorScheme };
+        window.addEventListener("message", (event) => {
+          const message = event.data;
+          if (event.source !== window.parent || message?.type !== "ketatlas:theme") return;
+          if (!["light", "dark", null].includes(message.theme)) return;
+          const theme = message.theme ?? original.theme;
+          if (theme === null) root.removeAttribute("data-theme");
+          else root.setAttribute("data-theme", theme);
+          root.style.colorScheme = message.theme ?? original.scheme;
+        });
+        if (window.parent !== window)
+          window.parent.postMessage({ type: "ketatlas:theme-ready" }, "*");
+      })();
+    </script>
+  </head>
+  <body data-kv-design-system>
+    <header>Your project</header>
+    <main>
+      <small>MADE WITH KETATLAS</small>
+      <h1>Your first flow is ready.</h1>
+      <p>Add screens, connect decisions, and share the entire folder with your team.</p>
+    </main>
+    <footer><a href="welcome.html" data-ui="action" data-variant="primary">Start again</a></footer>
+  </body>
+</html>
