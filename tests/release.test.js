@@ -128,26 +128,36 @@ test("retry verifies an existing release without publishing it again", async () 
     await writeFile(archive, testedBytes);
     const integrity = `sha512-${createHash("sha512").update(testedBytes).digest("base64")}`;
     const provenance = { predicateType: "https://slsa.dev/provenance/v1" };
-    const versions = { [version]: { dist: { integrity, attestations: { provenance } } } };
-    const publicRegistry = { "dist-tags": { latest: previousVersion }, versions };
+    const publicRegistry = { "dist-tags": { latest: previousVersion }, versions: {} };
     const fetchImpl = async () => Response.json(publicRegistry);
-    const verify = () => verifyRelease({ version, archive, fetchImpl });
+    let publishCount = 0;
+    async function runRelease() {
+      const plan = planRelease({ version, previousVersion, registry: publicRegistry });
+      if (plan.publish) {
+        publishCount++;
+        publicRegistry.versions[version] = { dist: { integrity, attestations: { provenance } } };
+      }
+      assert.equal(plan.verify, true);
+      await verifyRelease({ version, archive, fetchImpl });
+    }
 
-    const retry = planRelease({ version, previousVersion, registry: publicRegistry });
-    assert.equal(retry.publish, false);
-    assert.equal(retry.verify, true);
-    await assert.rejects(verify(), /latest does not point/);
+    // The registry accepts the first publish before the latest tag has propagated.
+    await assert.rejects(runRelease(), /latest does not point/);
+    assert.equal(publishCount, 1);
+    await assert.rejects(runRelease(), /latest does not point/);
 
     publicRegistry["dist-tags"].latest = version;
-    versions[version].dist.integrity = "sha512-other-archive";
-    await assert.rejects(verify(), /integrity does not match/);
+    const dist = publicRegistry.versions[version].dist;
+    dist.integrity = "sha512-other-archive";
+    await assert.rejects(runRelease(), /integrity does not match/);
 
-    versions[version].dist.integrity = integrity;
-    versions[version].dist.attestations = undefined;
-    await assert.rejects(verify(), /provenance metadata is missing/);
+    dist.integrity = integrity;
+    dist.attestations = undefined;
+    await assert.rejects(runRelease(), /provenance metadata is missing/);
 
-    versions[version].dist.attestations = { provenance };
-    await verify();
+    dist.attestations = { provenance };
+    await runRelease();
+    assert.equal(publishCount, 1, "Retries must never publish an archive already on npm.");
   } finally {
     await rm(root, { recursive: true, force: true });
   }

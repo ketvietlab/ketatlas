@@ -39,7 +39,6 @@ jobs:
     name: Publish new version from develop
     needs: verify
     if: >-
-      false &&
       github.repository == 'ketvietlab/ketatlas' &&
       vars.NPM_RELEASE_ENABLED == 'true' &&
       github.ref == 'refs/heads/develop' &&
