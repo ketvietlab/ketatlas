@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>KetAtlas compact workspace checks</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      #atlas {
+        height: 100dvh;
+      }
+      #test-results {
+        position: fixed;
+        inset: auto 0 0;
+        font: 11px/16px system-ui;
+        background: white;
+        color: black;
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="atlas"></main>
+    <output id="test-results" role="status">Running compact workspace checks</output>
+    <script type="module" src="./compact-workspace.js"></script>
+  </body>
+</html>

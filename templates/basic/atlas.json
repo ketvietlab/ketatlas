@@ -1,0 +1,45 @@
+{
+  "$schema": "./ketatlas.schema.json",
+  "version": 1,
+  "title": "My first atlas",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "screens": [
+    {
+      "id": "welcome",
+      "title": "Welcome",
+      "url": "./screens/welcome.html"
+    },
+    {
+      "id": "done",
+      "title": "Ready to go",
+      "url": "./screens/done.html"
+    }
+  ],
+  "flows": [
+    {
+      "id": "getting-started",
+      "title": "Get started",
+      "description": "A real HTML journey. Edit atlas.json to add your own screens and branches.",
+      "nodes": [
+        {
+          "id": "welcome",
+          "screen": "welcome"
+        },
+        {
+          "id": "done",
+          "screen": "done"
+        }
+      ],
+      "edges": [
+        {
+          "from": "welcome",
+          "to": "done",
+          "label": "Continue"
+        }
+      ]
+    }
+  ]
+}

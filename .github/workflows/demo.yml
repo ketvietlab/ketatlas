@@ -1,0 +1,47 @@
+name: Demo
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "src/**"
+      - "styles/**"
+      - "assets/**"
+      - "examples/**"
+      - "scripts/build-demo.mjs"
+      - "scripts/build.mjs"
+      - "LICENSE"
+      - "NOTICE.md"
+      - "package*.json"
+      - ".github/workflows/demo.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ketatlas-demo
+  cancel-in-progress: true
+jobs:
+  deploy:
+    name: Publish atlas.ketsuite.com
+    if: >-
+      github.repository == 'ketvietlab/ketatlas' &&
+      vars.DEMO_DEPLOY_ENABLED == 'true' &&
+      github.ref == 'refs/heads/develop'
+    environment: demo-production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Build the static demo
+        run: node scripts/build-demo.mjs
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy artifacts/demo --project-name=ketatlas-demo --branch=develop

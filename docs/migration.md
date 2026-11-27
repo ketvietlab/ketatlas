@@ -58,4 +58,4 @@ KetAtlas UI is English. Vietnamese business labels inside the project's configur
 
 The npm CLI and top-level `import { loadAtlas } from "ketatlas"` API are unchanged. For direct browser imports, replace `ketatlas/src/index.js` with `ketatlas/dist/index.js`. Copy `dist/` intact for static hosting. Bundled applications copy styles and assets from `dist/styles/` and `dist/assets/`, then set `assetBaseURL` to their public parent directory.
 
-Implementation source, build scripts, and source maps are not included in npm releases. Templates, schemas, TypeScript declarations, user documentation, and the agent skill remain available. Source and development history are private; the public GitHub repository contains documentation and contracts.
+Implementation source, build scripts, and source maps are not included in npm releases. Templates, schemas, TypeScript declarations, user documentation, and the agent skill remain available. The open-source edition is maintained in the public GitHub repository. Previously published archives retain the licenses supplied with them.

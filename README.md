@@ -132,7 +132,7 @@ Give the container a height. Copy the package’s `dist/` directory with its bun
 
 ## Documentation
 
-Implementation source and development history are maintained in a private repository. This public repository contains user documentation, JSON schemas, and the agent skill. The npm package ships a compiled, minified CLI and browser viewer without implementation source files or source maps. JavaScript bundles remain inspectable; minification is not encryption.
+The public KetAtlas repository is the source and build location for the open-source edition. See [Contributing](https://github.com/ketvietlab/ketatlas/blob/develop/CONTRIBUTING.md) to build and test it. Earlier private development history is kept in the private repository. The npm package ships a compiled, minified CLI and browser viewer without implementation source files or source maps. JavaScript bundles remain inspectable; minification is not encryption.
 
 - [Authoring guide](https://github.com/ketvietlab/ketatlas/blob/develop/docs/authoring.md): screens, processes, branching, reuse, and viewport sizes.
 - [Configuration reference](https://github.com/ketvietlab/ketatlas/blob/develop/docs/configuration.md): schema and defaults.
@@ -145,6 +145,6 @@ Audit is static analysis. It does not execute product code or prove that native 
 
 ## License
 
-KetAtlas is a project of **KET VIET JSC, VN**, distributed under the [KetAtlas Proprietary License](https://github.com/ketvietlab/ketatlas/blob/develop/LICENSE) starting with 0.4.1. You may use the official build; modification and redistribution of the runtime require written permission. Templates, schemas, declarations, documentation, and the agent skill may be used and adapted for your own projects. Earlier releases retain their original licenses.
+KetAtlas is a project of **KET VIET JSC, VN**. The open-source snapshot and releases starting with 1.0.0 use the [MIT License](https://github.com/ketvietlab/ketatlas/blob/develop/LICENSE). Previously published archives retain their original licenses. You retain rights to your atlas data and screen content.
 
 Copyright (c) 2026 KET VIET JSC, VN. See [third-party notices](https://github.com/ketvietlab/ketatlas/blob/develop/NOTICE.md) for bundled dependencies.

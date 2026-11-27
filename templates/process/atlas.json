@@ -1,0 +1,83 @@
+{
+  "$schema": "./ketatlas.schema.json",
+  "version": 1,
+  "title": "Order fulfilment",
+  "screens": [],
+  "flows": [
+    {
+      "id": "fulfilment",
+      "title": "From request to delivery",
+      "group": "Operations",
+      "description": "A process can be mapped without any screens. Connect people, decisions, and external handoffs with the same viewer.",
+      "start": "received",
+      "ends": ["delivered"],
+      "nodes": [
+        {
+          "id": "received",
+          "type": "note",
+          "title": "Request received",
+          "description": "Operations checks the delivery address and confirms the requested items.",
+          "column": 0
+        },
+        {
+          "id": "ready",
+          "type": "note",
+          "title": "Ready to ship",
+          "description": "The warehouse packs the order and records the parcel weight.",
+          "column": 1
+        },
+        {
+          "id": "carrier",
+          "type": "external",
+          "title": "Carrier handoff",
+          "description": "A delivery partner accepts the parcel. This step happens outside the product.",
+          "column": 2
+        },
+        {
+          "id": "delivered",
+          "type": "note",
+          "title": "Delivery confirmed",
+          "description": "The recipient confirms delivery. Operations closes the request.",
+          "column": 3
+        },
+        {
+          "id": "restock",
+          "type": "note",
+          "title": "Wait for replenishment",
+          "description": "Purchasing requests the missing stock and notifies operations when it arrives.",
+          "column": 1,
+          "row": 1
+        }
+      ],
+      "edges": [
+        {
+          "from": "received",
+          "to": "ready",
+          "label": "Items available"
+        },
+        {
+          "from": "ready",
+          "to": "carrier",
+          "label": "Parcel collected"
+        },
+        {
+          "from": "carrier",
+          "to": "delivered",
+          "label": "Proof of delivery"
+        },
+        {
+          "from": "received",
+          "to": "restock",
+          "label": "Stock unavailable",
+          "kind": "conditional"
+        },
+        {
+          "from": "restock",
+          "to": "ready",
+          "label": "Stock received",
+          "kind": "recovery"
+        }
+      ]
+    }
+  ]
+}

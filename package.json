@@ -1,0 +1,71 @@
+{
+  "name": "ketatlas",
+  "version": "0.6.1",
+  "description": "Interactive framework-native maps for screens, workflows, and user journeys.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ketvietlab/ketatlas.git"
+  },
+  "homepage": "https://github.com/ketvietlab/ketatlas#readme",
+  "bugs": "https://github.com/ketvietlab/ketatlas/issues",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema.json": "./schema.json",
+    "./progress.schema.json": "./progress.schema.json",
+    "./renderer.schema.json": "./renderer.schema.json"
+  },
+  "bin": {
+    "ketatlas": "dist/ketatlas.js"
+  },
+  "files": [
+    "dist",
+    "schema.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    "templates",
+    "skills",
+    "CHANGELOG.md",
+    "progress.schema.json",
+    "renderer.schema.json",
+    "docs/agent-mockups.md",
+    "docs/authoring.md",
+    "docs/cli.md",
+    "docs/configuration.md",
+    "docs/integration.md",
+    "docs/migration.md",
+    "docs/progress.md"
+  ],
+  "scripts": {
+    "dev": "node bin/ketatlas.js serve examples/atlas.json --root . --port 4178",
+    "build:demo": "node scripts/build-demo.mjs",
+    "validate": "node bin/ketatlas.js audit examples/atlas.json --root . && node bin/ketatlas.js audit templates/basic/atlas.json && node bin/ketatlas.js audit templates/web/atlas.json && node bin/ketatlas.js audit templates/process/atlas.json",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/browser.mjs && node tests/progress-browser.mjs && node tests/renderer-browser.mjs && node tests/renderer-browser.mjs --no-preload && node tests/preload-browser.mjs && node tests/flow-preload-browser.mjs",
+    "check": "npm run validate && npm test && npm run test:e2e",
+    "format": "prettier --write src styles/ketatlas.css bin scripts docs examples starter templates skills tests '*.md' '*.json' .github/workflows",
+    "format:check": "prettier --check src styles/ketatlas.css bin scripts docs examples starter templates skills tests '*.md' '*.json' .github/workflows",
+    "prepare:assets": "node scripts/prepare-assets.mjs",
+    "prepack": "npm run build",
+    "prepare:templates": "node scripts/schema.mjs && node scripts/progress-schema.mjs && node scripts/renderer-schema.mjs && node scripts/prepare-templates.mjs",
+    "test:package": "node tests/package.mjs",
+    "build": "node scripts/build.mjs",
+    "test:package:cli": "node tests/package.mjs --cli-only"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "ajv": "8.18.0",
+    "esbuild": "0.28.2",
+    "lucide-static": "1.40.0",
+    "playwright": "1.62.1",
+    "prettier": "3.6.2"
+  }
+}

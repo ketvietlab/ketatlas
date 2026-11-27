@@ -1,0 +1,199 @@
+export interface Viewport {
+  width: number;
+  height: number;
+}
+export interface AtlasScreen {
+  id: string;
+  title: string;
+  url: string;
+  viewport?: Viewport;
+  description?: string;
+  badge?: string;
+}
+export interface AtlasNode {
+  id: string;
+  screen?: string;
+  type?: "screen" | "note" | "external";
+  title?: string;
+  description?: string;
+  url?: string;
+  column?: number;
+  row?: number;
+}
+export interface AtlasEdge {
+  from: string;
+  to: string;
+  label: string;
+  kind?: "primary" | "conditional" | "recovery";
+}
+export interface AtlasFlow {
+  id: string;
+  title: string;
+  group?: string;
+  description?: string;
+  start?: string;
+  ends?: string[];
+  nodes: AtlasNode[];
+  edges: AtlasEdge[];
+}
+export interface AtlasConfig {
+  $schema?: string;
+  version: 1;
+  title: string;
+  description?: string;
+  viewport?: Viewport;
+  screens?: AtlasScreen[];
+  flows: AtlasFlow[];
+}
+export type ProgressStatus =
+  | "unassessed"
+  | "planned"
+  | "in_progress"
+  | "in_review"
+  | "implemented"
+  | "verified";
+export interface ProgressEvidence {
+  id: string;
+  kind: "pr" | "test" | "release" | "reference";
+  title: string;
+  url: string;
+  state?: string;
+  revision?: string;
+  environment?: string;
+  observedAt?: string;
+}
+export interface ProgressCheck {
+  id: string;
+  title: string;
+  done: boolean;
+  evidenceIds?: string[];
+  nodes?: { flowId: string; nodeId: string }[];
+}
+export interface ScreenProgress {
+  status: ProgressStatus;
+  owner?: string;
+  summary?: string;
+  blocker?: string;
+  updatedAt?: string;
+  tasks?: string[];
+  checks?: ProgressCheck[];
+  evidence?: ProgressEvidence[];
+}
+export interface AtlasProgress {
+  version: 1;
+  screens: Record<string, ScreenProgress>;
+}
+export interface ProgressSnapshot {
+  data: AtlasProgress;
+  revision: string;
+}
+export const progressStatuses: Record<ProgressStatus, string>;
+export function validateProgress(
+  data: unknown,
+  atlas: AtlasConfig,
+): { valid: boolean; errors: ValidationIssue[] };
+export function summarizeProgress(
+  data: AtlasProgress,
+  screens: AtlasScreen[],
+): { total: number; counts: Record<ProgressStatus, number>; blocked: number };
+export interface AtlasOptions {
+  /** Optional progress for createAtlas or to override loadAtlas sidecar discovery. */
+  progress?: AtlasProgress;
+  /** Override the default <atlas-name>.progress.json URL for loadAtlas. */
+  progressURL?: string;
+  progressRevision?: string;
+  /** Host persistence adapters; only provided by the local CLI by default. */
+  saveProgress?: (
+    screenId: string,
+    record: ScreenProgress,
+    revision: string,
+  ) => Promise<ProgressSnapshot>;
+  reloadProgress?: () => Promise<ProgressSnapshot>;
+  /** Local CLI editor endpoint and per-server write capability. */
+  progressEndpoint?: string;
+  progressToken?: string;
+  /** Relative screen URLs resolve against this URL. loadAtlas uses the JSON URL by default. */
+  baseURL?: string;
+  /** Override only relative screen and screen-node URLs, for a separate framework renderer. */
+  screenBaseURL?: string;
+  /** Public directory containing styles/ and assets/, ending in /. Needed when bundling the JS. */
+  assetBaseURL?: string;
+  initialFlow?: string;
+  theme?: "light" | "dark";
+  /** Opt in to forwarding the workspace theme to compatible embedded screens. Default false. */
+  syncTheme?: boolean;
+  /** Opt in only for one viewer per page; preserves unrelated URL parameters. */
+  syncUrl?: boolean;
+  /** Preload selected flows and cache their previews. Default true. */
+  preloadScreens?: boolean;
+  /** Maximum cached viewer-owned frames, including dialogs. Default 24; range 3–128. */
+  maxCachedPreviews?: number;
+  /** Maximum visible canvas previews; also limited to maxCachedPreviews - 2 when preloading. */
+  maxPreviews?: number;
+  previewThreshold?: number;
+  /** Defaults to "allow-scripts allow-forms". Only add permissions for trusted content. */
+  sandbox?: string;
+  signal?: AbortSignal;
+}
+export interface AtlasState {
+  flowId: string;
+  selectedNodeId: string | null;
+  zoom: number;
+  pan: { x: number; y: number };
+  flowCount: number;
+  nodeCount: number;
+  screenCount: number;
+  theme: "light" | "dark";
+  syncTheme: boolean;
+  preload: { total: number; loaded: number; failed: number; pending: number };
+  destroyed: boolean;
+}
+export interface AtlasInstance {
+  element: HTMLDivElement;
+  ready: Promise<void>;
+  /** Read after selecting a flow to await queued load attempts; also settles on destroy. */
+  previewsReady: Promise<void>;
+  goToFlow(id: string): void;
+  focusNode(flowId: string, nodeId: string): void;
+  openNode(flowId: string, nodeId: string): void;
+  fit(): void;
+  zoomTo(value: number): void;
+  setTheme(theme: "light" | "dark"): void;
+  setThemeSync(enabled: boolean): void;
+  getState(): AtlasState;
+  destroy(): void;
+}
+/** Connect a CLI-managed viewer document; call the returned function before unmounting. */
+export function connectManagedViewer(atlas: AtlasInstance, token: string): () => void;
+export interface ValidationIssue {
+  path: string;
+  message: string;
+}
+export interface ValidationResult {
+  valid: boolean;
+  errors: ValidationIssue[];
+  warnings: ValidationIssue[];
+}
+export class AtlasValidationError extends Error {
+  errors: ValidationIssue[];
+}
+export function validateAtlas(input: unknown): ValidationResult;
+export function createAtlas(
+  container: HTMLElement,
+  config: AtlasConfig,
+  options?: AtlasOptions,
+): AtlasInstance;
+export function loadAtlas(
+  container: HTMLElement,
+  url: string | URL,
+  options?: AtlasOptions,
+): Promise<AtlasInstance>;
+
+/** Unique-screen delivery and recorded-check completion for one workflow; screenless flows return null percentages. */
+export function summarizeFlowProgress(
+  data: AtlasProgress,
+  flow: AtlasFlow,
+): ReturnType<typeof summarizeProgress> & {
+  verifiedPercent: number | null;
+  checks: { done: number; total: number; unscoped: number; percent: number | null };
+};

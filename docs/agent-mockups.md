@@ -40,7 +40,7 @@ The deliverable is a `<name>.ketatlas/` bundle containing JSON/schema, documenta
 
 The agent should infer routine details and record assumptions. Provide an exact list when “all screens” means a defined inventory, so missing coverage can be checked against a source.
 
-Before it creates or edits visual screens, the skill asks for one design-system choice: Auto (Két Design System), Két Design System, Carbon, GitHub Primer, Microsoft Fluent 2, no design system, or a repository URL/local path. A design system already named in the request counts as the answer. Auto uses [Két Design System](https://github.com/ketvietlab/ketjs/tree/develop/packages/design-system). The agent inspects its actual tokens, components, assets, patterns, and framework, then renders with that framework instead of duplicating markup. An incorrect canonical component is fixed at its source before Atlas work continues.
+Before it creates or edits visual screens, the skill asks the user to choose among Auto, Faifo Design, Carbon, GitHub Primer, Microsoft Fluent 2, no design system, or a custom repository URL or local path. A design system already named in the request counts as the answer. Auto uses Faifo Design ([public adapter profile for `@ketvietlab/design-system@0.1.44`](https://unpkg.com/@ketvietlab/design-system@0.1.44/dist/atlas/profile.json)). The agent inspects its actual tokens, components, assets, patterns, and framework, then renders with that framework instead of duplicating markup. An incorrect canonical component is fixed at its source before Atlas work continues.
 
 For several atlases in one workspace, the agent creates or reuses one shared framework module for screen presenters, design-system composition, fixture factories, route helpers, and styles. Individual bundles keep flow/state declarations and namespaced screen paths; they do not copy UI code from one another. Production routes and Atlas fixture routes call the same presenter so the mock and built product do not become two visual sources of truth.
 
@@ -56,7 +56,7 @@ Save this template as `mockup-brief.md`, fill in the relevant fields, and ask: *
 - Output directory:
 - Target platforms and viewport sizes:
 - Product content language:
-- Design system choice (Auto/Két/Carbon/Primer/Fluent 2/none/custom source):
+- Design system choice (Auto/Faifo Design/Carbon/Primer/Fluent 2/none/custom source):
 - Existing application/framework and reference files/URLs:
 - Requested flows and screen inventory:
 - Relevant loading, empty, validation, error, and recovery states:

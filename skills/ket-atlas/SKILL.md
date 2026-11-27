@@ -24,8 +24,8 @@ A brief may be a chat message or a Markdown file; it is not another KetAtlas JSO
 
 Before scaffolding or editing visual screens, ask the user to choose a design system unless the current request already makes the choice explicit. Present these options in one concise prompt:
 
-1. **Auto (recommended)** — use [Két Design System](https://github.com/ketvietlab/ketjs/tree/develop/packages/design-system).
-2. **Két Design System** — use the same canonical Két source explicitly.
+1. **Auto (recommended)** — use Faifo Design ([public adapter profile for `@ketvietlab/design-system@0.1.44`](https://unpkg.com/@ketvietlab/design-system@0.1.44/dist/atlas/profile.json)).
+2. **Faifo Design** — select the same design system explicitly.
 3. **Carbon Design System**.
 4. **GitHub Primer**.
 5. **Microsoft Fluent 2**.
@@ -38,7 +38,7 @@ Inspect the selected source, its usage documentation, tokens, components, icons,
 
 Prefer a local adapter descriptor with `schemaVersion: "ketatlas.design-system-adapter.v1"` when the selected design system provides one. Discover it from the user-supplied path, a repository `design-system.atlas.json`, or the package's documented `./atlas/profile.json` export. Read the descriptor before using its assets or commands; do not assume capabilities it does not declare. If there is no adapter, use the design system through its documented native framework interface and record that no reproducible adapter lock is available.
 
-For Két Design System, prefer the descriptor exported at `@ketvietlab/design-system/atlas/profile.json` and its declared `ket-design-system-atlas` materializer. Read that descriptor for asset names, root attributes, slots, hooks, and state ownership instead of hard-coding them.
+For Faifo Design, prefer the descriptor exported at `@ketvietlab/design-system/atlas/profile.json` and its declared `ket-design-system-atlas` materializer. Read that descriptor for asset names, root attributes, slots, hooks, and state ownership instead of hard-coding them.
 
 ## Use the product's native framework
 
