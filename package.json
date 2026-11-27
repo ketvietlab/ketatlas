@@ -1,6 +1,6 @@
 {
   "name": "ketatlas",
-  "version": "0.6.1",
+  "version": "1.0.0",
   "description": "Interactive framework-native maps for screens, workflows, and user journeys.",
   "type": "module",
   "license": "MIT",

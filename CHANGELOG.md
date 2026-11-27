@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0
+
+- Release KetAtlas under the MIT License and maintain the source in the public KetAtlas repository. Previously published archives retain their original licenses.
+- Build and test on GitHub-hosted runners. Publish the verified archive through npm Trusted Publishing with provenance. Keep the CLI and browser viewer dependency-free and ship minified runtime assets without source maps.
+
 ## 0.6.1
 
 - Restore the roomier 0.5.2 workflow sidebar: 256px rail, heading and count, numbered workflow rows, and larger search. Keep the 0.6.0 theme toggle, Sync switch, managed viewer lifecycle, and canvas behavior.
